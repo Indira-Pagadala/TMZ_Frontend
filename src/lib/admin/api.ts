@@ -62,10 +62,21 @@ export async function fetchArticleById(id: string): Promise<AdminArticle | null>
   return mockArticles.find((a) => a.id === id) ?? null;
 }
 
+function createUuid(): string {
+  if (typeof crypto !== 'undefined' && 'randomUUID' in crypto) {
+    return crypto.randomUUID();
+  }
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
+    const r = Math.random() * 16 | 0;
+    const v = c === 'x' ? r : (r & 0x3 | 0x8);
+    return v.toString(16);
+  });
+}
+
 export async function createArticle(data: Partial<AdminArticle>): Promise<AdminArticle> {
   await delay();
   return {
-    id: `art-${Date.now()}`,
+    id: createUuid(),
     title: data.title || 'Untitled',
     subtitle: data.subtitle || '',
     summary: data.summary || null,

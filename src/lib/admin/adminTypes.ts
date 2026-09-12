@@ -50,6 +50,11 @@ export interface AdminArticle {
   created_at: string;
 }
 
+export interface AdminArticleIdCopy {
+  id: string;
+  shortId: string;
+}
+
 export interface AdminBlock {
   id: string;
   article_id: string;
@@ -80,7 +85,7 @@ export interface AdminQuiz {
   article_title?: string;
   title: string;
   question: string;
-  xp_reward: number;
+  xp_reward?: number;
   options: AdminQuizOption[];
 }
 
@@ -90,7 +95,8 @@ export interface AdminOpinion {
   article_title?: string;
   question: string;
   options: string[];
-  xp_reward: number;
+  xp_reward?: number;
+  allow_custom_text?: boolean;
 }
 
 export interface AdminComment {

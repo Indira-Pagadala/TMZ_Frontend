@@ -14,11 +14,11 @@ interface OpinionFormData {
   question: string;
   article_id: string;
   options: string[];
-  xp_reward: number;
+  allow_custom_text: boolean;
 }
 
 const emptyForm: OpinionFormData = {
-  question: '', article_id: '', options: ['', ''], xp_reward: 5,
+  question: '', article_id: '', options: ['', ''], allow_custom_text: false,
 };
 
 export function OpinionsSection() {
@@ -30,10 +30,21 @@ export function OpinionsSection() {
   const [form, setForm] = useState<OpinionFormData>(emptyForm);
   const [saving, setSaving] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<AdminOpinion | null>(null);
+  const [articles, setArticles] = useState<{ id: string; title: string }[]>([]);
 
   const load = () => {
     setLoading(true);
-    fetchOpinions().then(setOpinions).finally(() => setLoading(false));
+    Promise.all([
+      fetchOpinions(),
+      fetch('/api/placeholder').catch(() => null),
+    ]).then(([opinionsResult]) => {
+      setOpinions(opinionsResult);
+      const articleList = Array.from(new Set(opinionsResult.map((op) => op.article_id))).map((articleId) => ({
+        id: articleId,
+        title: opinionsResult.find((op) => op.article_id === articleId)?.article_title || articleId,
+      }));
+      setArticles(articleList);
+    }).finally(() => setLoading(false));
   };
 
   useEffect(load, []);
@@ -50,7 +61,7 @@ export function OpinionsSection() {
       question: op.question,
       article_id: op.article_id,
       options: [...op.options],
-      xp_reward: op.xp_reward,
+      allow_custom_text: Boolean(op.allow_custom_text),
     });
     setModalOpen(true);
   };
@@ -77,7 +88,7 @@ export function OpinionsSection() {
       question: form.question,
       article_id: form.article_id,
       options: cleanOptions,
-      xp_reward: form.xp_reward,
+      allow_custom_text: form.allow_custom_text,
     };
     const op = editingId ? updateOpinion(editingId, payload) : createOpinion(payload);
     op.then(() => {
@@ -129,7 +140,7 @@ export function OpinionsSection() {
                     {op.question}
                   </h3>
                   <p className="font-body text-xs" style={{ color: 'var(--text-muted)' }}>
-                    {op.article_title || op.article_id} · {op.xp_reward} XP
+                    {op.article_title || op.article_id}
                   </p>
                 </div>
                 <div className="flex items-center gap-2 flex-shrink-0">
@@ -162,11 +173,19 @@ export function OpinionsSection() {
           <Textarea label="Question" value={form.question}
             onChange={(e) => setForm({ ...form, question: e.target.value })}
             placeholder="Opinion question" rows={2} />
-          <Input label="Article ID" value={form.article_id}
-            onChange={(e) => setForm({ ...form, article_id: e.target.value })}
-            placeholder="article-uuid" />
-          <Input label="XP Reward" type="number" value={form.xp_reward}
-            onChange={(e) => setForm({ ...form, xp_reward: Number(e.target.value) })} />
+          <div>
+            <label className="block text-sm text-secondary font-body mb-1.5">Article</label>
+            <select className="input-field" value={form.article_id} onChange={(e) => setForm({ ...form, article_id: e.target.value })}>
+              <option value="">Select article</option>
+              {articles.length > 0 ? articles.map((article) => (
+                <option key={article.id} value={article.id}>{article.title}</option>
+              )) : <option value={form.article_id}>{form.article_id || 'No article selected'}</option>}
+            </select>
+          </div>
+          <label className="flex items-center gap-2 text-sm text-secondary font-body">
+            <input type="checkbox" checked={form.allow_custom_text} onChange={(e) => setForm({ ...form, allow_custom_text: e.target.checked })} />
+            Allow custom text box
+          </label>
           <div>
             <p className="font-body text-sm mb-2" style={{ color: 'var(--text-secondary)' }}>Options</p>
             <div className="space-y-2">

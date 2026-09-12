@@ -3,7 +3,7 @@ import {
   FileText, Plus, Edit3, Trash2, Eye, Send, Globe, GlobeLock,
   Calendar, Archive, Star, ArrowLeft, Save, Loader2, GripVertical,
   Type, Image as ImageIcon, HelpCircle, MessageSquare, Mic, X,
-  Check, ChevronUp, ChevronDown, AlertCircle,
+  Check, ChevronUp, ChevronDown, AlertCircle, Copy,
 } from 'lucide-react';
 import { useToast } from '@/lib/toast';
 import { GlassCard } from '@/components/ui/GlassCard';
@@ -47,9 +47,19 @@ const statusColors: Record<string, string> = {
 };
 
 export function ArticlesSection({ editorArticleId, setEditorArticleId }: ArticlesSectionProps) {
+  const { showToast } = useToast();
   const [articles, setArticles] = useState<AdminArticle[]>([]);
   const [categories, setCategories] = useState<AdminCategory[]>([]);
   const [loading, setLoading] = useState(true);
+
+  const copyArticleId = async (value: string) => {
+    try {
+      await navigator.clipboard.writeText(value);
+      showToast('Article ID copied', 'success');
+    } catch {
+      showToast('Copy failed', 'error');
+    }
+  };
   const [activeTab, setActiveTab] = useState<StatusTab>('ALL');
   const [search, setSearch] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('all');
@@ -196,7 +206,7 @@ export function ArticlesSection({ editorArticleId, setEditorArticleId }: Article
                   <th className="text-left text-xs text-muted font-body px-3 py-2">Category</th>
                   <th className="text-left text-xs text-muted font-body px-3 py-2">Type</th>
                   <th className="text-left text-xs text-muted font-body px-3 py-2">Status</th>
-                  <th className="text-left text-xs text-muted font-body px-3 py-2">Author</th>
+                  <th className="text-left text-xs text-muted font-body px-3 py-2">ID</th>
                   <th className="text-left text-xs text-muted font-body px-3 py-2">Pick</th>
                   <th className="text-left text-xs text-muted font-body px-3 py-2">Date</th>
                   <th className="text-right text-xs text-muted font-body px-3 py-2">Actions</th>
@@ -216,7 +226,14 @@ export function ArticlesSection({ editorArticleId, setEditorArticleId }: Article
                         {art.status.replace('_', ' ')}
                       </span>
                     </td>
-                    <td className="px-3 py-3 text-sm text-secondary">{art.author_name ?? '—'}</td>
+                    <td className="px-3 py-3 text-sm text-secondary">
+                      <div className="flex items-center gap-2">
+                        <span>{`${art.id.slice(0, 8)}...${art.id.slice(-6)}`}</span>
+                        <button onClick={() => void copyArticleId(art.id)} className="text-muted hover:text-primary" title="Copy full UUID">
+                          <Copy className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    </td>
                     <td className="px-3 py-3">
                       {art.is_authors_pick && <Star className="w-4 h-4 text-amber-500" />}
                     </td>
@@ -360,11 +377,9 @@ function ArticleEditor({
   const [summary, setSummary] = useState(article?.summary ?? '');
   const [categoryId, setCategoryId] = useState(article?.category_id ?? '');
   const [articleType, setArticleType] = useState(article?.article_type ?? 'ARTICLE');
-  const [authorName, setAuthorName] = useState(article?.author_name ?? '');
-  const [isFeatured, setIsFeatured] = useState(article?.is_featured ?? false);
   const [isAuthorsPick, setIsAuthorsPick] = useState(article?.is_authors_pick ?? false);
-  const [readingTime, setReadingTime] = useState(article?.reading_time_minutes ?? 5);
   const [coverImage, setCoverImage] = useState(article?.cover_image_url ?? '');
+  const [articleId, setArticleId] = useState(article?.id ?? crypto.randomUUID());
   const [status, setStatus] = useState<ArticleStatus>(article?.status ?? 'DRAFT');
   const [blocks, setBlocks] = useState<EditorBlock[]>([]);
   const [showBlockPicker, setShowBlockPicker] = useState(false);
@@ -401,14 +416,15 @@ function ArticleEditor({
     setSaving(true);
     try {
       const data: Partial<AdminArticle> = {
+        id: articleId,
         title, subtitle, summary,
         category_id: categoryId || null,
         category_name: categories.find((c) => c.id === categoryId)?.name,
         article_type: articleType as AdminArticle['article_type'],
-        author_name: authorName || null,
-        is_featured: isFeatured,
+        author_name: null,
+        is_featured: false,
         is_authors_pick: isAuthorsPick,
-        reading_time_minutes: readingTime,
+        reading_time_minutes: null,
         cover_image_url: coverImage || null,
         status: newStatus ?? status,
       };
@@ -488,7 +504,7 @@ function ArticleEditor({
             placeholder="Brief summary for cards and previews"
           />
         </div>
-        <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-2 md:grid-cols-2 gap-4">
           <div>
             <label className="block text-sm text-secondary font-body mb-1.5">Category</label>
             <select className="input-field" value={categoryId} onChange={(e) => setCategoryId(e.target.value)}>
@@ -505,24 +521,28 @@ function ArticleEditor({
               <option value="PODCAST">Podcast</option>
               <option value="QUIZ">Quiz</option>
               <option value="OPINION">Opinion</option>
-              <option value="FEATURED">Featured</option>
             </select>
           </div>
-          <Input label="Author" value={authorName} onChange={(e) => setAuthorName(e.target.value)} placeholder="Author name" />
         </div>
-        <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-          <Input label="Reading Time (min)" type="number" value={readingTime} onChange={(e) => setReadingTime(Number(e.target.value))} />
-          <Input label="Cover Image URL" value={coverImage} onChange={(e) => setCoverImage(e.target.value)} placeholder="https://..." />
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label className="block text-sm text-secondary font-body mb-1.5">Article ID</label>
+            <div className="flex items-center gap-2">
+              <input className="input-field flex-1" value={articleId} readOnly />
+              <button type="button" onClick={() => void navigator.clipboard.writeText(articleId)} className="btn-secondary px-3 py-2 text-xs flex items-center gap-1">
+                <Copy className="w-3.5 h-3.5" /> Copy
+              </button>
+            </div>
+          </div>
           <div className="flex items-end gap-4">
-            <label className="flex items-center gap-2 cursor-pointer">
-              <input type="checkbox" checked={isFeatured} onChange={(e) => setIsFeatured(e.target.checked)} className="w-4 h-4 rounded" />
-              <span className="text-sm text-secondary">Featured</span>
-            </label>
             <label className="flex items-center gap-2 cursor-pointer">
               <input type="checkbox" checked={isAuthorsPick} onChange={(e) => setIsAuthorsPick(e.target.checked)} className="w-4 h-4 rounded" />
               <span className="text-sm text-secondary">Author's Pick</span>
             </label>
           </div>
+        </div>
+        <div className="grid grid-cols-1 gap-4">
+          <Input label="Cover Image URL" value={coverImage} onChange={(e) => setCoverImage(e.target.value)} placeholder="https://..." />
         </div>
       </GlassCard>
 
@@ -670,7 +690,6 @@ function BlockEditor({
         <div className="space-y-3">
           <Input label="Quiz Title" value={block.quiz_title} onChange={(e) => onUpdate({ quiz_title: e.target.value })} placeholder="Quiz title" />
           <Input label="Question" value={block.quiz_question} onChange={(e) => onUpdate({ quiz_question: e.target.value })} placeholder="Quiz question" />
-          <Input label="XP Reward" type="number" value={block.quiz_xp} onChange={(e) => onUpdate({ quiz_xp: Number(e.target.value) })} />
           <div>
             <label className="block text-sm text-secondary font-body mb-1.5">Options</label>
             <div className="space-y-2">
@@ -729,7 +748,10 @@ function BlockEditor({
       {block.block_type === 'OPINION' && (
         <div className="space-y-3">
           <Input label="Question" value={block.opinion_question} onChange={(e) => onUpdate({ opinion_question: e.target.value })} placeholder="Opinion question" />
-          <Input label="XP Reward" type="number" value={block.opinion_xp} onChange={(e) => onUpdate({ opinion_xp: Number(e.target.value) })} />
+          <label className="flex items-center gap-2 text-sm text-secondary font-body">
+            <input type="checkbox" checked={Boolean(block.opinion_xp)} onChange={(e) => onUpdate({ opinion_xp: e.target.checked ? 1 : 0 })} />
+            Allow custom text box
+          </label>
           <div>
             <label className="block text-sm text-secondary font-body mb-1.5">Options</label>
             <div className="space-y-2">

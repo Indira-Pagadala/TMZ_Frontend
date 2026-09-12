@@ -19,6 +19,14 @@ interface CategoryFormData {
 
 const emptyForm: CategoryFormData = { name: '', slug: '', description: '', image_url: '' };
 
+function slugify(value: string): string {
+  return value
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/(^-|-$)/g, '') || 'category';
+}
+
 export function CategoriesSection() {
   const { showToast } = useToast();
   const [categories, setCategories] = useState<AdminCategory[]>([]);
@@ -56,14 +64,15 @@ export function CategoriesSection() {
   };
 
   const handleSave = () => {
-    if (!form.name.trim() || !form.slug.trim()) {
-      showToast('Name and slug are required', 'error');
+    if (!form.name.trim()) {
+      showToast('Name is required', 'error');
       return;
     }
+    const slug = slugify(form.name);
     setSaving(true);
     const payload = {
       name: form.name,
-      slug: form.slug,
+      slug,
       description: form.description || null,
       image_url: form.image_url || null,
     };
@@ -166,12 +175,6 @@ export function CategoriesSection() {
             value={form.name}
             onChange={(e) => setForm({ ...form, name: e.target.value })}
             placeholder="Category name"
-          />
-          <Input
-            label="Slug"
-            value={form.slug}
-            onChange={(e) => setForm({ ...form, slug: e.target.value })}
-            placeholder="category-slug"
           />
           <Textarea
             label="Description"

@@ -21,13 +21,11 @@ interface QuizFormData {
   title: string;
   question: string;
   article_id: string;
-  xp_reward: number;
   options: QuizOptionDraft[];
 }
 
 const emptyForm: QuizFormData = {
-  title: '', question: '', article_id: '', xp_reward: 10,
-  options: [{ id: '', label: '', is_correct: true, explanation: '' }],
+  title: '', question: '', article_id: '', options: [{ id: '', label: '', is_correct: true, explanation: '' }],
 };
 
 const newOption = (): QuizOptionDraft => ({
@@ -43,10 +41,21 @@ export function QuizzesSection() {
   const [form, setForm] = useState<QuizFormData>(emptyForm);
   const [saving, setSaving] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<AdminQuiz | null>(null);
+  const [articles, setArticles] = useState<{ id: string; title: string }[]>([]);
 
   const load = () => {
     setLoading(true);
-    fetchQuizzes().then(setQuizzes).finally(() => setLoading(false));
+    Promise.all([
+      fetchQuizzes(),
+      fetch('/api/placeholder').catch(() => null),
+    ]).then(([quizzesResult]) => {
+      setQuizzes(quizzesResult);
+      const articleList = Array.from(new Set(quizzesResult.map((quiz) => quiz.article_id))).map((articleId) => ({
+        id: articleId,
+        title: quizzesResult.find((quiz) => quiz.article_id === articleId)?.article_title || articleId,
+      }));
+      setArticles(articleList);
+    }).finally(() => setLoading(false));
   };
 
   useEffect(load, []);
@@ -63,7 +72,6 @@ export function QuizzesSection() {
       title: quiz.title,
       question: quiz.question,
       article_id: quiz.article_id,
-      xp_reward: quiz.xp_reward,
       options: quiz.options.map((o) => ({
         id: o.id, label: o.label, is_correct: o.is_correct, explanation: o.explanation ?? '',
       })),
@@ -103,7 +111,6 @@ export function QuizzesSection() {
       title: form.title,
       question: form.question,
       article_id: form.article_id,
-      xp_reward: form.xp_reward,
       options: form.options.map((o, i) => ({
         id: o.id, label: o.label, is_correct: o.is_correct,
         explanation: o.explanation || null, order_index: i,
@@ -162,7 +169,7 @@ export function QuizzesSection() {
                     {quiz.question}
                   </p>
                   <p className="font-body text-xs" style={{ color: 'var(--text-muted)' }}>
-                    {quiz.article_title || quiz.article_id} · {quiz.xp_reward} XP
+                    {quiz.article_title || quiz.article_id}
                   </p>
                 </div>
                 <div className="flex items-center gap-2 flex-shrink-0">
@@ -209,10 +216,15 @@ export function QuizzesSection() {
             onChange={(e) => setForm({ ...form, title: e.target.value })} placeholder="Quiz title" />
           <Textarea label="Question" value={form.question}
             onChange={(e) => setForm({ ...form, question: e.target.value })} placeholder="Question text" rows={2} />
-          <Input label="Article ID" value={form.article_id}
-            onChange={(e) => setForm({ ...form, article_id: e.target.value })} placeholder="article-uuid" />
-          <Input label="XP Reward" type="number" value={form.xp_reward}
-            onChange={(e) => setForm({ ...form, xp_reward: Number(e.target.value) })} />
+          <div>
+            <label className="block text-sm text-secondary font-body mb-1.5">Article</label>
+            <select className="input-field" value={form.article_id} onChange={(e) => setForm({ ...form, article_id: e.target.value })}>
+              <option value="">Select article</option>
+              {articles.length > 0 ? articles.map((article) => (
+                <option key={article.id} value={article.id}>{article.title}</option>
+              )) : <option value={form.article_id}>{form.article_id || 'No article selected'}</option>}
+            </select>
+          </div>
           <div>
             <p className="font-body text-sm mb-2" style={{ color: 'var(--text-secondary)' }}>Options</p>
             <div className="space-y-3">

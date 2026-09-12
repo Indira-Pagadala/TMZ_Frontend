@@ -40,9 +40,11 @@ export const mockCategories: AdminCategory[] = [
   { id: 'cat-4', name: 'Business', slug: 'business', description: 'Business and finance insights', image_url: null, article_count: 6, created_at: '2026-08-01T10:00:00Z' },
 ];
 
+const randomId = (prefix: string) => `${prefix}-${Math.random().toString(16).slice(2, 10)}`;
+
 export const mockArticles: AdminArticle[] = [
   {
-    id: 'art-1', title: 'The Future of Quantum Computing', subtitle: 'How quantum processors will reshape everything',
+    id: 'a83f1e62-2c61-4d92-9c18-0e6a3f92cd12', title: 'The Future of Quantum Computing', subtitle: 'How quantum processors will reshape everything',
     summary: 'An in-depth look at quantum computing breakthroughs in 2026.',
     category_id: 'cat-1', category_name: 'Technology', article_type: 'ARTICLE',
     status: 'PUBLISHED', cover_image_url: null, author_name: 'Dr. Sarah Chen',
@@ -50,7 +52,7 @@ export const mockArticles: AdminArticle[] = [
     published_at: '2026-09-01T14:00:00Z', scheduled_at: null, created_at: '2026-08-28T10:00:00Z',
   },
   {
-    id: 'art-2', title: 'Mars Colony: The First 100 Days', subtitle: 'A documentary-style deep dive',
+    id: '5f8a2d11-7a32-4d7c-bf49-1d8b2d37e2b1', title: 'Mars Colony: The First 100 Days', subtitle: 'A documentary-style deep dive',
     summary: 'What life looks like for the first Mars settlers.',
     category_id: 'cat-2', category_name: 'Science', article_type: 'PODCAST',
     status: 'PENDING_REVIEW', cover_image_url: null, author_name: 'James Park',
@@ -58,7 +60,7 @@ export const mockArticles: AdminArticle[] = [
     published_at: null, scheduled_at: null, created_at: '2026-09-03T09:00:00Z',
   },
   {
-    id: 'art-3', title: 'The Economics of AI', subtitle: 'Understanding the AI market',
+    id: '9b2e2ab9-8d08-4c2f-a5d1-992221d6d6ec', title: 'The Economics of AI', subtitle: 'Understanding the AI market',
     summary: 'A quiz-driven exploration of AI economics.',
     category_id: 'cat-4', category_name: 'Business', article_type: 'QUIZ',
     status: 'DRAFT', cover_image_url: null, author_name: 'Maria Lopez',
@@ -66,7 +68,7 @@ export const mockArticles: AdminArticle[] = [
     published_at: null, scheduled_at: null, created_at: '2026-09-05T12:00:00Z',
   },
   {
-    id: 'art-4', title: 'Digital Art Renaissance', subtitle: 'The new wave of creators',
+    id: 'd61e0d0b-7057-4a6b-8230-38ee64a12c40', title: 'Digital Art Renaissance', subtitle: 'The new wave of creators',
     summary: 'How digital tools are transforming art.',
     category_id: 'cat-3', category_name: 'Culture', article_type: 'ARTICLE',
     status: 'PUBLISHED', cover_image_url: null, author_name: 'Tom Wright',
@@ -74,7 +76,7 @@ export const mockArticles: AdminArticle[] = [
     published_at: '2026-09-02T14:00:00Z', scheduled_at: null, created_at: '2026-08-30T10:00:00Z',
   },
   {
-    id: 'art-5', title: 'The Opinion Divide', subtitle: 'Reader perspectives on climate',
+    id: '421f13d4-b8d0-4f2e-a5f5-7f0b5d762350', title: 'The Opinion Divide', subtitle: 'Reader perspectives on climate',
     summary: 'An opinion-driven piece on climate policy.',
     category_id: 'cat-2', category_name: 'Science', article_type: 'OPINION',
     status: 'SCHEDULED', cover_image_url: null, author_name: 'Dr. Sarah Chen',
@@ -82,7 +84,7 @@ export const mockArticles: AdminArticle[] = [
     published_at: null, scheduled_at: '2026-09-15T10:00:00Z', created_at: '2026-09-04T15:00:00Z',
   },
   {
-    id: 'art-6', title: 'Neural Networks Explained', subtitle: 'A beginner-friendly guide',
+    id: 'b76d8a8e-7c66-42f8-a3f5-189a4aeefad1', title: 'Neural Networks Explained', subtitle: 'A beginner-friendly guide',
     summary: 'Understanding the basics of neural networks.',
     category_id: 'cat-1', category_name: 'Technology', article_type: 'ARTICLE',
     status: 'UNPUBLISHED', cover_image_url: null, author_name: 'James Park',
@@ -90,7 +92,7 @@ export const mockArticles: AdminArticle[] = [
     published_at: '2026-08-20T14:00:00Z', scheduled_at: null, created_at: '2026-08-15T10:00:00Z',
   },
   {
-    id: 'art-7', title: 'The Startup Playbook 2026', subtitle: 'Lessons from founders',
+    id: '4d393a26-54c2-4b72-b52d-bc4ac36679d0', title: 'The Startup Playbook 2026', subtitle: 'Lessons from founders',
     summary: 'A rejected article about startup strategies.',
     category_id: 'cat-4', category_name: 'Business', article_type: 'ARTICLE',
     status: 'REJECTED', cover_image_url: null, author_name: 'Maria Lopez',
@@ -98,7 +100,7 @@ export const mockArticles: AdminArticle[] = [
     published_at: null, scheduled_at: null, created_at: '2026-08-25T10:00:00Z',
   },
   {
-    id: 'art-8', title: 'Archived: Web3 Revisited', subtitle: 'A retrospective',
+    id: 'ce8d4d97-f50d-4d70-93fe-b0db8f44cdd8', title: 'Archived: Web3 Revisited', subtitle: 'A retrospective',
     summary: 'An archived article from earlier in the year.',
     category_id: 'cat-1', category_name: 'Technology', article_type: 'ARTICLE',
     status: 'ARCHIVED', cover_image_url: null, author_name: 'Tom Wright',
@@ -109,7 +111,7 @@ export const mockArticles: AdminArticle[] = [
 
 export const mockQuizzes: AdminQuiz[] = [
   {
-    id: 'quiz-1', article_id: 'art-3', article_title: 'The Economics of AI',
+    id: 'quiz-1', article_id: '9b2e2ab9-8d08-4c2f-a5d1-992221d6d6ec', article_title: 'The Economics of AI',
     title: 'AI Market Fundamentals', question: 'What is the primary driver of AI market growth?',
     xp_reward: 10,
     options: [
@@ -120,7 +122,7 @@ export const mockQuizzes: AdminQuiz[] = [
     ],
   },
   {
-    id: 'quiz-2', article_id: 'art-1', article_title: 'The Future of Quantum Computing',
+    id: 'quiz-2', article_id: 'a83f1e62-2c61-4d92-9c18-0e6a3f92cd12', article_title: 'The Future of Quantum Computing',
     title: 'Quantum Basics', question: 'What is a qubit?',
     xp_reward: 15,
     options: [
@@ -133,16 +135,16 @@ export const mockQuizzes: AdminQuiz[] = [
 
 export const mockOpinions: AdminOpinion[] = [
   {
-    id: 'op-1', article_id: 'art-5', article_title: 'The Opinion Divide',
+    id: 'op-1', article_id: '421f13d4-b8d0-4f2e-a5f5-7f0b5d762350', article_title: 'The Opinion Divide',
     question: 'Should climate policy prioritize economic growth or environmental protection?',
     options: ['Economic growth first', 'Environmental protection first', 'Balance both equally'],
-    xp_reward: 5,
+    allow_custom_text: true,
   },
   {
-    id: 'op-2', article_id: 'art-4', article_title: 'Digital Art Renaissance',
+    id: 'op-2', article_id: 'd61e0d0b-7057-4a6b-8230-38ee64a12c40', article_title: 'Digital Art Renaissance',
     question: 'Is AI-generated art truly creative?',
     options: ['Yes, it is creative', 'No, it lacks intent', 'It depends on the context'],
-    xp_reward: 5,
+    allow_custom_text: false,
   },
 ];
 
@@ -159,12 +161,12 @@ export const mockComments: AdminComment[] = Array.from({ length: 25 }, (_, i) =>
 }));
 
 export const mockUsers: AdminUser[] = [
-  { id: 'user-1', email: 'sarah@example.com', display_name: 'Dr. Sarah Chen', role: 'admin', xp: 1250, level: 5, avatar_url: null, status: 'active', created_at: '2026-07-01T10:00:00Z', articles_completed: 18, quizzes_correct: 12 },
-  { id: 'user-2', email: 'james@example.com', display_name: 'James Park', role: 'editor', xp: 820, level: 4, avatar_url: null, status: 'active', created_at: '2026-07-05T10:00:00Z', articles_completed: 10, quizzes_correct: 8 },
-  { id: 'user-3', email: 'maria@example.com', display_name: 'Maria Lopez', role: 'author', xp: 540, level: 3, avatar_url: null, status: 'active', created_at: '2026-07-10T10:00:00Z', articles_completed: 7, quizzes_correct: 5 },
-  { id: 'user-4', email: 'tom@example.com', display_name: 'Tom Wright', role: 'author', xp: 380, level: 2, avatar_url: null, status: 'active', created_at: '2026-07-15T10:00:00Z', articles_completed: 5, quizzes_correct: 3 },
-  { id: 'user-5', email: 'reader@example.com', display_name: 'Jane Reader', role: 'user', xp: 150, level: 1, avatar_url: null, status: 'active', created_at: '2026-08-01T10:00:00Z', articles_completed: 3, quizzes_correct: 1 },
-  { id: 'user-6', email: 'banned@example.com', display_name: 'Bad Actor', role: 'user', xp: 0, level: 1, avatar_url: null, status: 'suspended', created_at: '2026-08-10T10:00:00Z', articles_completed: 0, quizzes_correct: 0 },
+  { id: 'user-1', email: 'sarah@example.com', display_name: 'Dr. Sarah Chen', role: 'Superadmin', xp: 1250, level: 5, avatar_url: null, status: 'active', created_at: '2026-07-01T10:00:00Z', articles_completed: 18, quizzes_correct: 12 },
+  { id: 'user-2', email: 'james@example.com', display_name: 'James Park', role: 'User', xp: 820, level: 4, avatar_url: null, status: 'active', created_at: '2026-07-05T10:00:00Z', articles_completed: 10, quizzes_correct: 8 },
+  { id: 'user-3', email: 'maria@example.com', display_name: 'Maria Lopez', role: 'User', xp: 540, level: 3, avatar_url: null, status: 'active', created_at: '2026-07-10T10:00:00Z', articles_completed: 7, quizzes_correct: 5 },
+  { id: 'user-4', email: 'tom@example.com', display_name: 'Tom Wright', role: 'User', xp: 380, level: 2, avatar_url: null, status: 'active', created_at: '2026-07-15T10:00:00Z', articles_completed: 5, quizzes_correct: 3 },
+  { id: 'user-5', email: 'reader@example.com', display_name: 'Jane Reader', role: 'User', xp: 150, level: 1, avatar_url: null, status: 'active', created_at: '2026-08-01T10:00:00Z', articles_completed: 3, quizzes_correct: 1 },
+  { id: 'user-6', email: 'banned@example.com', display_name: 'Bad Actor', role: 'User', xp: 0, level: 1, avatar_url: null, status: 'suspended', created_at: '2026-08-10T10:00:00Z', articles_completed: 0, quizzes_correct: 0 },
 ];
 
 export const mockXPRules: XPRule[] = [
@@ -212,11 +214,32 @@ export const mockAdSlots: AdSlot[] = [
   { id: 'slot-3', name: 'Homepage Hero', slug: 'homepage-hero', description: 'Homepage hero banner', placement: 'homepage', is_active: false, created_at: '2026-08-01T10:00:00Z' },
 ];
 
+const mediaUrls = {
+  quantum: 'https://images.unsplash.com/photo-1518770660439-4636190af475?auto=format&fit=crop&w=1200&q=80',
+  mars: 'https://images.unsplash.com/photo-1446776811953-b23d57bd21aa?auto=format&fit=crop&w=1200&q=80',
+  ai: 'https://images.unsplash.com/photo-1531482615713-2afd69097998?auto=format&fit=crop&w=1200&q=80',
+  art: 'https://images.unsplash.com/photo-1460661419201-fd4cecdf8a8b?auto=format&fit=crop&w=1200&q=80',
+  city: 'https://images.unsplash.com/photo-1493246507139-91e8fad9978e?auto=format&fit=crop&w=1200&q=80',
+  lab: 'https://images.unsplash.com/photo-1532094349884-543bc11b234d?auto=format&fit=crop&w=1200&q=80',
+  ocean: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=1200&q=80',
+  studio: 'https://images.unsplash.com/photo-1524758631624-e2822e304c36?auto=format&fit=crop&w=1200&q=80',
+  stack: 'https://images.unsplash.com/photo-1526379095098-d400fd0bf935?auto=format&fit=crop&w=1200&q=80',
+  people: 'https://images.unsplash.com/photo-1522202176988-66273c2fd55f?auto=format&fit=crop&w=1200&q=80',
+};
+
 export const mockMedia: MediaItem[] = [
-  { id: 'med-1', filename: 'quantum-cover.jpg', file_path: '/uploads/quantum-cover.jpg', file_type: 'image/jpeg', file_size: 245678, uploaded_by: 'sarah@example.com', created_at: '2026-08-28T10:00:00Z' },
-  { id: 'med-2', filename: 'mars-podcast.mp3', file_path: '/uploads/mars-podcast.mp3', file_type: 'audio/mpeg', file_size: 52428800, uploaded_by: 'james@example.com', created_at: '2026-09-03T09:00:00Z' },
-  { id: 'med-3', filename: 'ai-diagram.png', file_path: '/uploads/ai-diagram.png', file_type: 'image/png', file_size: 89012, uploaded_by: 'maria@example.com', created_at: '2026-09-05T12:00:00Z' },
-  { id: 'med-4', filename: 'digital-art.jpg', file_path: '/uploads/digital-art.jpg', file_type: 'image/jpeg', file_size: 178234, uploaded_by: 'tom@example.com', created_at: '2026-08-30T10:00:00Z' },
+  { id: 'med-1', filename: 'quantum-cover.jpg', file_path: mediaUrls.quantum, file_type: 'image/jpeg', file_size: 245678, uploaded_by: 'sarah@example.com', created_at: '2026-08-28T10:00:00Z' },
+  { id: 'med-2', filename: 'mars-podcast.mp3', file_path: mediaUrls.mars, file_type: 'audio/mpeg', file_size: 52428800, uploaded_by: 'james@example.com', created_at: '2026-09-03T09:00:00Z' },
+  { id: 'med-3', filename: 'ai-diagram.png', file_path: mediaUrls.ai, file_type: 'image/png', file_size: 89012, uploaded_by: 'maria@example.com', created_at: '2026-09-05T12:00:00Z' },
+  { id: 'med-4', filename: 'digital-art.jpg', file_path: mediaUrls.art, file_type: 'image/jpeg', file_size: 178234, uploaded_by: 'tom@example.com', created_at: '2026-08-30T10:00:00Z' },
+  { id: 'med-5', filename: 'city-skyline.jpg', file_path: mediaUrls.city, file_type: 'image/jpeg', file_size: 348290, uploaded_by: 'sarah@example.com', created_at: '2026-09-02T10:00:00Z' },
+  { id: 'med-6', filename: 'lab-setup.jpg', file_path: mediaUrls.lab, file_type: 'image/jpeg', file_size: 301460, uploaded_by: 'james@example.com', created_at: '2026-09-06T10:00:00Z' },
+  { id: 'med-7', filename: 'ocean-scene.jpg', file_path: mediaUrls.ocean, file_type: 'image/jpeg', file_size: 323540, uploaded_by: 'maria@example.com', created_at: '2026-08-31T10:00:00Z' },
+  { id: 'med-8', filename: 'studio-board.jpg', file_path: mediaUrls.studio, file_type: 'image/jpeg', file_size: 266770, uploaded_by: 'tom@example.com', created_at: '2026-09-01T10:00:00Z' },
+  { id: 'med-9', filename: 'team-working.jpg', file_path: mediaUrls.stack, file_type: 'image/jpeg', file_size: 374560, uploaded_by: 'sarah@example.com', created_at: '2026-09-08T10:00:00Z' },
+  { id: 'med-10', filename: 'collaboration.jpg', file_path: mediaUrls.people, file_type: 'image/jpeg', file_size: 292640, uploaded_by: 'james@example.com', created_at: '2026-09-09T10:00:00Z' },
+  { id: 'med-11', filename: 'research-visual.jpg', file_path: mediaUrls.lab, file_type: 'image/jpeg', file_size: 298110, uploaded_by: 'maria@example.com', created_at: '2026-09-12T10:00:00Z' },
+  { id: 'med-12', filename: 'workspace-hero.jpg', file_path: mediaUrls.studio, file_type: 'image/jpeg', file_size: 314900, uploaded_by: 'tom@example.com', created_at: '2026-09-10T10:00:00Z' },
 ];
 
 export const mockAnalytics: AnalyticsData = {

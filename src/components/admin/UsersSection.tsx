@@ -7,7 +7,7 @@ import { GlassCard } from '@/components/ui/GlassCard';
 import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
 
-const ROLES = ['user', 'editor', 'admin', 'superadmin'];
+const ROLES = ['Superadmin', 'User'];
 const PAGE_SIZE = 10;
 
 export function UsersSection(): JSX.Element {
