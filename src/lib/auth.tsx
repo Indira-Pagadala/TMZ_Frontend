@@ -1,12 +1,47 @@
+/**
+ * Mock authentication provider.
+ * Replaces the Supabase auth dependency with a localStorage-backed mock.
+ * Same context interface — swap back to the Supabase version when connecting your backend.
+ */
+
 import { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
-import type { Session, User } from '@supabase/supabase-js';
-import { supabase } from './supabase';
 import type { UserProfile } from '@/types';
-import { fetchProfile } from './api';
+import { fetchProfile, updateProfile } from './api';
+import { DEFAULT_PROFILE } from './mock/data';
+
+/* ---- Minimal User type (replaces @supabase/supabase-js User) ---- */
+export interface MockUser {
+  id: string;
+  email: string;
+}
+
+/* ---- Minimal Session type (replaces @supabase/supabase-js Session) ---- */
+export interface MockSession {
+  user: MockUser;
+}
+
+const STORAGE_KEY = 'tms_mock_session';
+
+function loadSession(): MockSession | null {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    return raw ? JSON.parse(raw) : null;
+  } catch {
+    return null;
+  }
+}
+
+function saveSession(session: MockSession | null) {
+  if (session) {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(session));
+  } else {
+    localStorage.removeItem(STORAGE_KEY);
+  }
+}
 
 interface AuthContextValue {
-  session: Session | null;
-  user: User | null;
+  session: MockSession | null;
+  user: MockUser | null;
   profile: UserProfile | null;
   loading: boolean;
   signIn: (email: string, password: string) => Promise<void>;
@@ -19,47 +54,59 @@ interface AuthContextValue {
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [session, setSession] = useState<Session | null>(null);
-  const [user, setUser] = useState<User | null>(null);
+  const [session, setSession] = useState<MockSession | null>(null);
+  const [user, setUser] = useState<MockUser | null>(null);
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data }) => {
-      (async () => {
-        setSession(data.session);
-        setUser(data.session?.user ?? null);
-        if (data.session?.user) {
-          try {
-            const p = await fetchProfile(data.session.user.id);
-            setProfile(p);
-          } catch {
-            setProfile(null);
-          }
-        }
-        setLoading(false);
-      })();
-    });
-
-    const { data: listener } = supabase.auth.onAuthStateChange((_event, newSession) => {
-      (async () => {
-        setSession(newSession);
-        setUser(newSession?.user ?? null);
-        if (newSession?.user) {
-          try {
-            const p = await fetchProfile(newSession.user.id);
-            setProfile(p);
-          } catch {
-            setProfile(null);
-          }
-        } else {
-          setProfile(null);
-        }
-      })();
-    });
-
-    return () => listener.subscription.unsubscribe();
+    const saved = loadSession();
+    if (saved) {
+      setSession(saved);
+      setUser(saved.user);
+      fetchProfile(saved.user.id)
+        .then(setProfile)
+        .catch(() => setProfile(null))
+        .finally(() => setLoading(false));
+    } else {
+      setLoading(false);
+    }
   }, []);
+
+  const applySession = async (mockUser: MockUser) => {
+    const sess: MockSession = { user: mockUser };
+    saveSession(sess);
+    setSession(sess);
+    setUser(mockUser);
+    try {
+      const p = await fetchProfile(mockUser.id);
+      setProfile(p);
+    } catch {
+      setProfile(null);
+    }
+  };
+
+  const signIn = async (email: string, _password: string) => {
+    // Mock: any email/password accepted
+    await applySession({ id: DEFAULT_PROFILE.id, email });
+  };
+
+  const signUp = async (email: string, _password: string) => {
+    // Mock: create session immediately (no email confirmation)
+    await applySession({ id: DEFAULT_PROFILE.id, email });
+  };
+
+  const signInWithGoogle = async () => {
+    // Mock: simulate Google sign-in
+    await applySession({ id: DEFAULT_PROFILE.id, email: DEFAULT_PROFILE.email });
+  };
+
+  const signOut = async () => {
+    saveSession(null);
+    setSession(null);
+    setUser(null);
+    setProfile(null);
+  };
 
   const refreshProfile = async () => {
     if (user) {
@@ -72,33 +119,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  const signIn = async (email: string, password: string) => {
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
-    if (error) throw error;
-  };
-
-  const signUp = async (email: string, password: string) => {
-    const { error } = await supabase.auth.signUp({ email, password });
-    if (error) throw error;
-  };
-
-  const signInWithGoogle = async () => {
-    const { error } = await supabase.auth.signInWithOAuth({
-      provider: 'google',
-      options: { redirectTo: window.location.origin },
-    });
-    if (error) throw error;
-  };
-
-  const signOut = async () => {
-    await supabase.auth.signOut();
-    setProfile(null);
-  };
-
   return (
-    <AuthContext.Provider
-      value={{ session, user, profile, loading, signIn, signUp, signInWithGoogle, signOut, refreshProfile }}
-    >
+    <AuthContext.Provider value={{ session, user, profile, loading, signIn, signUp, signInWithGoogle, signOut, refreshProfile }}>
       {children}
     </AuthContext.Provider>
   );

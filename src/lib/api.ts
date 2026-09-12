@@ -1,210 +1,128 @@
-import { supabase } from './supabase';
+/**
+ * Mock API service layer.
+ * All function signatures match the real backend API interface.
+ * Replace each function body with your actual backend calls when ready.
+ */
+
 import type {
-  Category,
-  Promotion,
-  Article,
-  ArticleWithBlocks,
-  Comment,
-  ReadingProgress,
-  UserProfile,
-  Level,
-  Badge,
-  UserBadge,
-  Bookmark,
-  QuizAttempt,
-  OpinionSubmission,
-  CompletionCard,
-  TeamMember,
-  ReadingHistoryItem,
-  SavedArticleItem,
-  QuizStats,
-  OpinionWithArticle,
-  AchievementItem,
-  CompletionResult,
-  QuizAttemptResult,
+  Category, Promotion, Article, ArticleWithBlocks, Comment,
+  ReadingProgress, UserProfile, Level, Badge, UserBadge, Bookmark,
+  OpinionSubmission, CompletionCard, TeamMember,
+  ReadingHistoryItem, SavedArticleItem, QuizStats, OpinionWithArticle,
+  AchievementItem, CompletionResult, QuizAttemptResult,
 } from '@/types';
 
-/* Categories */
+import {
+  CATEGORIES, PROMOTIONS, ARTICLES, ARTICLES_WITH_BLOCKS,
+  COMMENTS, LEVELS, BADGES, TEAM_MEMBERS,
+  DEFAULT_PROFILE, DEFAULT_USER_BADGES, DEFAULT_COMPLETION_CARDS,
+  DEFAULT_READING_HISTORY, DEFAULT_SAVED_ARTICLES, DEFAULT_OPINIONS,
+  DEFAULT_ACHIEVEMENTS,
+  generateArticleWithBlocks,
+} from './mock/data';
+
+const delay = (ms = 150) => new Promise((r) => setTimeout(r, ms));
+
+/* --------- in-memory session state (resets on page refresh) --------- */
+let _profile: UserProfile = { ...DEFAULT_PROFILE };
+let _bookmarks = new Set<string>(DEFAULT_SAVED_ARTICLES.map((b) => b.article_id));
+let _readingProgress: Record<string, ReadingProgress> = {};
+let _completedArticleIds = new Set<string>(DEFAULT_COMPLETION_CARDS.map((c) => c.article_id));
+let _completionCards: CompletionCard[] = [...DEFAULT_COMPLETION_CARDS];
+let _comments: Comment[] = [...COMMENTS];
+let _quizAttempted = new Set<string>();
+let _opinionSubmitted = new Set<string>();
+let _opinions: OpinionSubmission[] = [...DEFAULT_OPINIONS];
+let _bookmarkList: Bookmark[] = DEFAULT_SAVED_ARTICLES.map((s) => ({
+  id: s.id,
+  user_id: s.user_id,
+  article_id: s.article_id,
+  created_at: s.created_at,
+}));
+
+/* ===================== CATEGORIES ===================== */
+
 export async function fetchCategories(): Promise<Category[]> {
-  const { data, error } = await supabase
-    .from('categories')
-    .select('*')
-    .order('name');
-  if (error) throw error;
-  return data ?? [];
+  await delay();
+  return [...CATEGORIES];
 }
 
 export async function fetchCategoryBySlug(slug: string): Promise<Category | null> {
-  const { data, error } = await supabase
-    .from('categories')
-    .select('*')
-    .eq('slug', slug)
-    .maybeSingle();
-  if (error) throw error;
-  return data;
+  await delay();
+  return CATEGORIES.find((c) => c.slug === slug) ?? null;
 }
 
-/* Promotions */
+/* ===================== PROMOTIONS ===================== */
+
 export async function fetchPromotions(): Promise<Promotion[]> {
-  const { data, error } = await supabase
-    .from('promotions')
-    .select('*')
-    .eq('active', true)
-    .order('created_at', { ascending: false });
-  if (error) throw error;
-  return data ?? [];
+  await delay();
+  return [...PROMOTIONS];
 }
 
-/* Articles */
+/* ===================== ARTICLES ===================== */
+
 export async function fetchLatestArticles(limit = 10): Promise<Article[]> {
-  const { data, error } = await supabase
-    .from('articles')
-    .select('*, category:categories(*)')
-    .eq('is_published', true)
-    .order('published_at', { ascending: false })
-    .limit(limit);
-  if (error) throw error;
-  return data ?? [];
+  await delay();
+  return ARTICLES.slice(0, limit);
 }
 
 export async function fetchArticlesByCategory(categoryId: string): Promise<Article[]> {
-  const { data, error } = await supabase
-    .from('articles')
-    .select('*, category:categories(*)')
-    .eq('is_published', true)
-    .eq('category_id', categoryId)
-    .order('published_at', { ascending: false });
-  if (error) throw error;
-  return data ?? [];
+  await delay();
+  return ARTICLES.filter((a) => a.category_id === categoryId);
 }
 
 export async function fetchAuthorsPicks(limit = 10): Promise<Article[]> {
-  const { data, error } = await supabase
-    .from('articles')
-    .select('*, category:categories(*)')
-    .eq('is_published', true)
-    .eq('is_authors_pick', true)
-    .order('published_at', { ascending: false })
-    .limit(limit);
-  if (error) throw error;
-  return data ?? [];
+  await delay();
+  return ARTICLES.filter((a) => a.is_authors_pick).slice(0, limit);
 }
 
 export async function fetchFeaturedArticles(limit = 5): Promise<Article[]> {
-  const { data, error } = await supabase
-    .from('articles')
-    .select('*, category:categories(*)')
-    .eq('is_published', true)
-    .eq('is_featured', true)
-    .order('published_at', { ascending: false })
-    .limit(limit);
-  if (error) throw error;
-  return data ?? [];
+  await delay();
+  return ARTICLES.filter((a) => a.is_featured).slice(0, limit);
 }
 
 export async function fetchArticleById(id: string): Promise<ArticleWithBlocks | null> {
-  const { data: article, error: articleError } = await supabase
-    .from('articles')
-    .select('*, category:categories(*)')
-    .eq('id', id)
-    .maybeSingle();
-  if (articleError) throw articleError;
-  if (!article) return null;
-
-  const { data: blocks, error: blocksError } = await supabase
-    .from('article_blocks')
-    .select('*')
-    .eq('article_id', id)
-    .order('order_index');
-  if (blocksError) throw blocksError;
-
-  const enrichedBlocks = await Promise.all(
-    (blocks ?? []).map(async (block) => {
-      let quiz = null;
-      let opinion = null;
-      let podcast = null;
-
-      if (block.quiz_id) {
-        const { data } = await supabase
-          .from('quizzes')
-          .select('*, options:quiz_options(*)')
-          .eq('id', block.quiz_id)
-          .maybeSingle();
-        quiz = data;
-      }
-
-      if (block.opinion_id) {
-        const { data } = await supabase
-          .from('opinions')
-          .select('*')
-          .eq('id', block.opinion_id)
-          .maybeSingle();
-        opinion = data;
-      }
-
-      if (block.podcast_id) {
-        const { data } = await supabase
-          .from('podcast_blocks')
-          .select('*')
-          .eq('id', block.podcast_id)
-          .maybeSingle();
-        podcast = data;
-      }
-
-      return { ...block, quiz, opinion, podcast };
-    }),
-  );
-
-  return { ...article, blocks: enrichedBlocks };
+  await delay();
+  if (ARTICLES_WITH_BLOCKS[id]) return { ...ARTICLES_WITH_BLOCKS[id] };
+  const base = ARTICLES.find((a) => a.id === id);
+  if (!base) return null;
+  return generateArticleWithBlocks(base);
 }
 
-/* Bookmarks */
+/* ===================== BOOKMARKS ===================== */
+
 export async function fetchBookmarks(userId: string): Promise<Bookmark[]> {
-  const { data, error } = await supabase
-    .from('bookmarks')
-    .select('*')
-    .eq('user_id', userId);
-  if (error) throw error;
-  return data ?? [];
+  await delay();
+  return _bookmarkList.filter((b) => b.user_id === userId);
 }
 
-export async function isBookmarked(userId: string, articleId: string): Promise<boolean> {
-  const { data, error } = await supabase
-    .from('bookmarks')
-    .select('id')
-    .eq('user_id', userId)
-    .eq('article_id', articleId)
-    .maybeSingle();
-  if (error) throw error;
-  return !!data;
+export async function isBookmarked(_userId: string, articleId: string): Promise<boolean> {
+  await delay(50);
+  return _bookmarks.has(articleId);
 }
 
-export async function addBookmark(userId: string, articleId: string): Promise<void> {
-  const { error } = await supabase
-    .from('bookmarks')
-    .insert({ user_id: userId, article_id: articleId });
-  if (error) throw error;
+export async function addBookmark(_userId: string, articleId: string): Promise<void> {
+  await delay(50);
+  _bookmarks.add(articleId);
+  _bookmarkList.push({
+    id: `bm-${Date.now()}`,
+    user_id: _userId,
+    article_id: articleId,
+    created_at: new Date().toISOString(),
+  });
 }
 
-export async function removeBookmark(userId: string, articleId: string): Promise<void> {
-  const { error } = await supabase
-    .from('bookmarks')
-    .delete()
-    .eq('user_id', userId)
-    .eq('article_id', articleId);
-  if (error) throw error;
+export async function removeBookmark(_userId: string, articleId: string): Promise<void> {
+  await delay(50);
+  _bookmarks.delete(articleId);
+  _bookmarkList = _bookmarkList.filter((b) => b.article_id !== articleId);
 }
 
-/* Reading Progress */
-export async function fetchReadingProgress(userId: string, articleId: string): Promise<ReadingProgress | null> {
-  const { data, error } = await supabase
-    .from('reading_progress')
-    .select('*')
-    .eq('user_id', userId)
-    .eq('article_id', articleId)
-    .maybeSingle();
-  if (error) throw error;
-  return data;
+/* ===================== READING PROGRESS ===================== */
+
+export async function fetchReadingProgress(_userId: string, articleId: string): Promise<ReadingProgress | null> {
+  await delay(50);
+  return _readingProgress[articleId] ?? null;
 }
 
 export async function updateReadingProgress(
@@ -214,425 +132,281 @@ export async function updateReadingProgress(
   scrollPosition: number,
   completed: boolean,
 ): Promise<void> {
-  const { error } = await supabase
-    .from('reading_progress')
-    .upsert({
-      user_id: userId,
-      article_id: articleId,
-      percentage,
-      scroll_position: Math.round(scrollPosition),
-      completed,
-      updated_at: new Date().toISOString(),
-    }, { onConflict: 'user_id,article_id' });
-  if (error) throw error;
+  _readingProgress[articleId] = {
+    article_id: articleId,
+    user_id: userId,
+    percentage,
+    scroll_position: Math.round(scrollPosition),
+    completed,
+    updated_at: new Date().toISOString(),
+  };
+  if (completed) _completedArticleIds.add(articleId);
 }
 
-/* Quiz Attempts */
+/* ===================== QUIZ ATTEMPTS ===================== */
+
 export async function submitQuizAttempt(
   quizId: string,
   _userId: string,
-  selectedOptionId: string,
+  _selectedOptionId: string,
   isCorrect: boolean,
   xpEarned: number,
 ): Promise<QuizAttemptResult> {
-  const { data, error } = await supabase
-    .rpc('award_quiz_xp', {
-      p_quiz_id: quizId,
-      p_selected_option_id: selectedOptionId,
-      p_is_correct: isCorrect,
-      p_xp_earned: xpEarned,
-    });
-  if (error) throw error;
-  return data;
+  await delay();
+  _quizAttempted.add(quizId);
+  if (isCorrect) {
+    _profile = { ..._profile, xp: _profile.xp + xpEarned };
+  }
+  return {
+    attempt_id: `attempt-${Date.now()}`,
+    xp_earned: isCorrect ? xpEarned : 0,
+    total_xp: _profile.xp,
+    new_level: _profile.level,
+    already_attempted: false,
+  };
 }
 
-export async function hasUserAttemptedQuiz(userId: string, quizId: string): Promise<boolean> {
-  const { data, error } = await supabase
-    .from('quiz_attempts')
-    .select('id')
-    .eq('user_id', userId)
-    .eq('quiz_id', quizId)
-    .maybeSingle();
-  if (error) throw error;
-  return !!data;
+export async function hasUserAttemptedQuiz(_userId: string, quizId: string): Promise<boolean> {
+  await delay(50);
+  return _quizAttempted.has(quizId);
 }
 
-/* Opinion Submissions */
+/* ===================== OPINIONS ===================== */
+
 export async function submitOpinion(
   opinionId: string,
   userId: string,
   selectedOption: string,
 ): Promise<OpinionSubmission> {
-  const { data, error } = await supabase
-    .from('opinion_submissions')
-    .insert({
-      opinion_id: opinionId,
-      user_id: userId,
-      selected_option: selectedOption,
-    })
-    .select('*')
-    .single();
-  if (error) throw error;
-  return data;
+  await delay();
+  _opinionSubmitted.add(opinionId);
+  const sub: OpinionSubmission = {
+    id: `op-sub-${Date.now()}`,
+    opinion_id: opinionId,
+    user_id: userId,
+    selected_option: selectedOption,
+    created_at: new Date().toISOString(),
+  };
+  _opinions.push(sub as OpinionWithArticle);
+  _profile = { ..._profile, xp: _profile.xp + 50 };
+  return sub;
 }
 
-export async function hasUserSubmittedOpinion(userId: string, opinionId: string): Promise<boolean> {
-  const { data, error } = await supabase
-    .from('opinion_submissions')
-    .select('id')
-    .eq('user_id', userId)
-    .eq('opinion_id', opinionId)
-    .maybeSingle();
-  if (error) throw error;
-  return !!data;
+export async function hasUserSubmittedOpinion(_userId: string, opinionId: string): Promise<boolean> {
+  await delay(50);
+  return _opinionSubmitted.has(opinionId);
 }
 
-/* Comments */
-export async function fetchComments(articleId: string, page = 1, pageSize = 10): Promise<Comment[]> {
-  const from = (page - 1) * pageSize;
-  const to = from + pageSize - 1;
-  const { data, error } = await supabase
-    .from('comments')
-    .select('*')
-    .eq('article_id', articleId)
-    .order('created_at', { ascending: false })
-    .range(from, to);
-  if (error) throw error;
-  return data ?? [];
+/* ===================== COMMENTS ===================== */
+
+export async function fetchComments(articleId: string, _page = 1, _pageSize = 10): Promise<Comment[]> {
+  await delay();
+  return _comments.filter((c) => c.article_id === articleId);
 }
 
 export async function addComment(articleId: string, userId: string, content: string): Promise<Comment> {
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('display_name, avatar_url')
-    .eq('id', userId)
-    .maybeSingle();
-
-  const { data, error } = await supabase
-    .from('comments')
-    .insert({
-      article_id: articleId,
-      user_id: userId,
-      display_name: profile?.display_name || 'Anonymous',
-      avatar_url: profile?.avatar_url,
-      content,
-    })
-    .select('*')
-    .single();
-  if (error) throw error;
-  return data;
+  await delay();
+  const comment: Comment = {
+    id: `c-${Date.now()}`,
+    article_id: articleId,
+    user_id: userId,
+    display_name: _profile.display_name,
+    avatar_url: _profile.avatar_url,
+    content,
+    created_at: new Date().toISOString(),
+  };
+  _comments = [comment, ..._comments];
+  return comment;
 }
 
-export async function deleteComment(commentId: string, userId: string): Promise<void> {
-  const { error } = await supabase
-    .from('comments')
-    .delete()
-    .eq('id', commentId)
-    .eq('user_id', userId);
-  if (error) throw error;
+export async function deleteComment(commentId: string, _userId: string): Promise<void> {
+  await delay(50);
+  _comments = _comments.filter((c) => c.id !== commentId);
 }
 
-/* User Profile */
-export async function fetchProfile(userId: string): Promise<UserProfile | null> {
-  const { data, error } = await supabase
-    .from('profiles')
-    .select('*')
-    .eq('id', userId)
-    .maybeSingle();
-  if (error) throw error;
-  return data;
+/* ===================== USER PROFILE ===================== */
+
+export async function fetchProfile(_userId: string): Promise<UserProfile | null> {
+  await delay(50);
+  return { ..._profile };
 }
 
-export async function updateProfile(userId: string, updates: Partial<UserProfile>): Promise<void> {
-  const { error } = await supabase
-    .from('profiles')
-    .update(updates)
-    .eq('id', userId);
-  if (error) throw error;
+export async function updateProfile(_userId: string, updates: Partial<UserProfile>): Promise<void> {
+  await delay();
+  _profile = { ..._profile, ...updates };
 }
 
-/* Levels */
+/* ===================== LEVELS ===================== */
+
 export async function fetchLevels(): Promise<Level[]> {
-  const { data, error } = await supabase
-    .from('levels')
-    .select('*')
-    .order('level_number');
-  if (error) throw error;
-  return data ?? [];
+  await delay(50);
+  return [...LEVELS];
 }
 
 export async function fetchLevelByNumber(levelNumber: number): Promise<Level | null> {
-  const { data, error } = await supabase
-    .from('levels')
-    .select('*')
-    .eq('level_number', levelNumber)
-    .maybeSingle();
-  if (error) throw error;
-  return data;
+  await delay(50);
+  return LEVELS.find((l) => l.level_number === levelNumber) ?? null;
 }
 
-/* Badges */
-export async function fetchUserBadges(userId: string): Promise<UserBadge[]> {
-  const { data, error } = await supabase
-    .from('user_badges')
-    .select('*, badge:badges(*)')
-    .eq('user_id', userId)
-    .order('earned_at', { ascending: false });
-  if (error) throw error;
-  return data ?? [];
+/* ===================== BADGES ===================== */
+
+export async function fetchUserBadges(_userId: string): Promise<UserBadge[]> {
+  await delay(50);
+  return [...DEFAULT_USER_BADGES];
 }
 
-/* Completion Cards */
-export async function fetchCompletionCards(userId: string): Promise<CompletionCard[]> {
-  const { data, error } = await supabase
-    .from('completion_cards')
-    .select('*')
-    .eq('user_id', userId)
-    .order('created_at', { ascending: false });
-  if (error) throw error;
-  return data ?? [];
+/* ===================== COMPLETION CARDS ===================== */
+
+export async function fetchCompletionCards(_userId: string): Promise<CompletionCard[]> {
+  await delay(50);
+  return [..._completionCards];
 }
 
 export async function createCompletionCard(
-  _userId: string,
+  userId: string,
   articleId: string,
-  _articleTitle: string,
+  articleTitle: string,
   xpGained: number,
 ): Promise<CompletionResult> {
-  const { data, error } = await supabase
-    .rpc('award_completion_xp', {
-      p_article_id: articleId,
-      p_xp_amount: xpGained,
-    });
-  if (error) throw error;
-  return data;
+  await delay();
+
+  if (_completedArticleIds.has(articleId)) {
+    return {
+      card_id: '',
+      xp_gained: 0,
+      total_xp: _profile.xp,
+      new_level: _profile.level,
+      already_completed: true,
+    };
+  }
+
+  _completedArticleIds.add(articleId);
+  const newXp = _profile.xp + xpGained;
+  const newLevel = LEVELS.filter((l) => l.xp_threshold <= newXp).length;
+
+  _profile = { ..._profile, xp: newXp, level: newLevel };
+
+  const card: CompletionCard = {
+    id: `cc-${Date.now()}`,
+    user_id: userId,
+    article_id: articleId,
+    article_title: articleTitle,
+    xp_gained: xpGained,
+    created_at: new Date().toISOString(),
+  };
+  _completionCards = [card, ..._completionCards];
+
+  return {
+    card_id: card.id,
+    xp_gained: xpGained,
+    total_xp: newXp,
+    new_level: newLevel,
+    already_completed: false,
+  };
 }
 
-export async function hasCompletionCard(userId: string, articleId: string): Promise<boolean> {
-  const { data, error } = await supabase
-    .from('completion_cards')
-    .select('id')
-    .eq('user_id', userId)
-    .eq('article_id', articleId)
-    .maybeSingle();
-  if (error) throw error;
-  return !!data;
+export async function hasCompletionCard(_userId: string, articleId: string): Promise<boolean> {
+  await delay(50);
+  return _completedArticleIds.has(articleId);
 }
 
-/* Team */
+/* ===================== TEAM ===================== */
+
 export async function fetchTeamMembers(): Promise<TeamMember[]> {
-  const { data, error } = await supabase
-    .from('team_members')
-    .select('*')
-    .order('order_index');
-  if (error) throw error;
-  return data ?? [];
+  await delay();
+  return [...TEAM_MEMBERS];
 }
 
-/* Contact forms — abstraction for future backend connection */
-export async function submitBusinessEnquiry(data: {
-  name: string;
-  company: string;
-  purpose: string;
-  phone: string;
-  email: string;
+/* ===================== CONTACT / FEEDBACK ===================== */
+
+export async function submitBusinessEnquiry(_data: {
+  name: string; company: string; purpose: string; phone: string; email: string;
 }): Promise<void> {
-  const { error } = await supabase.from('business_enquiries').insert(data);
-  if (error) throw error;
+  await delay(400);
+  // no-op in mock mode
 }
 
-export async function submitFeedback(data: { content: string }): Promise<void> {
-  const { error } = await supabase.from('feedback').insert(data);
-  if (error) throw error;
+export async function submitFeedback(_data: { content: string }): Promise<void> {
+  await delay(400);
+  // no-op in mock mode
 }
 
-/* ===== Part 3: Profile data ===== */
+/* ===================== PROFILE DATA ===================== */
 
-/* Reading History (unfinished articles) */
-export async function fetchReadingHistory(userId: string): Promise<ReadingHistoryItem[]> {
-  const { data, error } = await supabase
-    .from('reading_progress')
-    .select('*, article:articles(*)')
-    .eq('user_id', userId)
-    .eq('completed', false)
-    .order('updated_at', { ascending: false });
-  if (error) throw error;
-  return data ?? [];
+export async function fetchReadingHistory(_userId: string): Promise<ReadingHistoryItem[]> {
+  await delay();
+  return [...DEFAULT_READING_HISTORY];
 }
 
-/* Completed articles */
-export async function fetchCompletedArticles(userId: string): Promise<ReadingHistoryItem[]> {
-  const { data, error } = await supabase
-    .from('reading_progress')
-    .select('*, article:articles(*)')
-    .eq('user_id', userId)
-    .eq('completed', true)
-    .order('updated_at', { ascending: false });
-  if (error) throw error;
-  return data ?? [];
+export async function fetchCompletedArticles(_userId: string): Promise<ReadingHistoryItem[]> {
+  await delay();
+  return _completionCards.map((cc) => {
+    const article = ARTICLES.find((a) => a.id === cc.article_id);
+    return {
+      article_id: cc.article_id,
+      user_id: _userId,
+      percentage: 100,
+      scroll_position: 0,
+      completed: true,
+      updated_at: cc.created_at,
+      article,
+    };
+  });
 }
 
-/* Saved articles (bookmarks with article data) */
-export async function fetchSavedArticles(userId: string): Promise<SavedArticleItem[]> {
-  const { data, error } = await supabase
-    .from('bookmarks')
-    .select('*, article:articles(*)')
-    .eq('user_id', userId)
-    .order('created_at', { ascending: false });
-  if (error) throw error;
-  return data ?? [];
+export async function fetchSavedArticles(_userId: string): Promise<SavedArticleItem[]> {
+  await delay();
+  return _bookmarkList.map((b) => ({
+    ...b,
+    article: ARTICLES.find((a) => a.id === b.article_id),
+  }));
 }
 
-/* Quiz stats */
-export async function fetchQuizStats(userId: string): Promise<QuizStats> {
-  const { data, error } = await supabase
-    .from('quiz_attempts')
-    .select('is_correct')
-    .eq('user_id', userId);
-  if (error) throw error;
-  const attempts = data ?? [];
-  const total = attempts.length;
-  const correct = attempts.filter((a: { is_correct: boolean }) => a.is_correct).length;
-  const incorrect = total - correct;
-  const accuracy = total > 0 ? Math.round((correct / total) * 100) : 0;
-  return { total, correct, incorrect, accuracy };
+export async function fetchQuizStats(_userId: string): Promise<QuizStats> {
+  await delay(50);
+  const total = _quizAttempted.size;
+  return { total, correct: total, incorrect: 0, accuracy: total > 0 ? 100 : 0 };
 }
 
-/* Opinions with article data */
-export async function fetchUserOpinions(userId: string): Promise<OpinionWithArticle[]> {
-  const { data, error } = await supabase
-    .from('opinion_submissions')
-    .select('*, opinion:opinions(*)')
-    .eq('user_id', userId)
-    .order('created_at', { ascending: false });
-  if (error) throw error;
-
-  const submissions = data ?? [];
-  const withArticles = await Promise.all(
-    submissions.map(async (sub: OpinionWithArticle) => {
-      if (sub.opinion?.article_id) {
-        const { data: art } = await supabase
-          .from('articles')
-          .select('*')
-          .eq('id', sub.opinion.article_id)
-          .maybeSingle();
-        return { ...sub, article: art };
-      }
-      return sub;
-    }),
-  );
-  return withArticles;
+export async function fetchUserOpinions(_userId: string): Promise<OpinionWithArticle[]> {
+  await delay();
+  return [...DEFAULT_OPINIONS];
 }
 
-/* All badges (earned + unearned) */
-export async function fetchAllBadges(userId: string): Promise<{ all: Badge[]; earned: Set<string> }> {
-  const [allBadges, userBadges] = await Promise.all([
-    supabase.from('badges').select('*').order('name'),
-    supabase.from('user_badges').select('badge_id').eq('user_id', userId),
-  ]);
-  if (allBadges.error) throw allBadges.error;
-  if (userBadges.error) throw userBadges.error;
-  const earned = new Set((userBadges.data ?? []).map((ub: { badge_id: string }) => ub.badge_id));
-  return { all: allBadges.data ?? [], earned };
+export async function fetchAllBadges(_userId: string): Promise<{ all: Badge[]; earned: Set<string> }> {
+  await delay();
+  const earned = new Set(DEFAULT_USER_BADGES.map((ub) => ub.badge_id));
+  return { all: [...BADGES], earned };
 }
 
-/* Achievement history (completion cards + badges + quiz milestones) */
-export async function fetchAchievementHistory(userId: string): Promise<AchievementItem[]> {
-  const [cards, badges, quizAttempts] = await Promise.all([
-    supabase.from('completion_cards').select('*').eq('user_id', userId).order('created_at', { ascending: false }),
-    supabase.from('user_badges').select('*, badge:badges(*)').eq('user_id', userId).order('earned_at', { ascending: false }),
-    supabase.from('quiz_attempts').select('*').eq('user_id', userId).eq('is_correct', true).order('created_at', { ascending: false }),
-  ]);
-
-  const items: AchievementItem[] = [];
-
-  for (const card of cards.data ?? []) {
-    items.push({
-      id: `card-${card.id}`,
-      type: 'completion',
-      title: 'Article Completed',
-      description: card.article_title,
-      date: card.created_at,
-      xp: card.xp_gained,
-      article_title: card.article_title,
-    });
-  }
-
-  for (const ub of badges.data ?? []) {
-    items.push({
-      id: `badge-${ub.id}`,
-      type: 'badge',
-      title: ub.badge?.name ?? 'Badge Earned',
-      description: ub.badge?.description ?? '',
-      date: ub.earned_at,
-      xp: 0,
-      badge_image: ub.badge?.image_url ?? null,
-    });
-  }
-
-  for (const qa of (quizAttempts.data ?? []).slice(0, 5)) {
-    items.push({
-      id: `quiz-${qa.id}`,
-      type: 'quiz',
-      title: 'Quiz Correct Answer',
-      description: `Earned ${qa.xp_earned} XP`,
-      date: qa.created_at,
-      xp: qa.xp_earned,
-    });
-  }
-
-  items.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
-  return items;
+export async function fetchAchievementHistory(_userId: string): Promise<AchievementItem[]> {
+  await delay();
+  return [...DEFAULT_ACHIEVEMENTS];
 }
 
-/* Avatar upload */
-export async function uploadAvatar(userId: string, file: File): Promise<string> {
-  const ext = file.name.split('.').pop() || 'png';
-  const path = `avatars/${userId}.${ext}`;
-  const { error: upErr } = await supabase.storage
-    .from('avatars')
-    .upload(path, file, { upsert: true });
-  if (upErr) throw upErr;
+/* ===================== AVATAR UPLOAD ===================== */
 
-  const { data } = supabase.storage.from('avatars').getPublicUrl(path);
-  return data.publicUrl;
+export async function uploadAvatar(_userId: string, file: File): Promise<string> {
+  await delay(600);
+  // Return a local object URL as placeholder (no actual upload)
+  return URL.createObjectURL(file);
 }
 
-/* Update profile with avatar */
-export async function updateAvatar(userId: string, avatarUrl: string): Promise<void> {
-  const { error } = await supabase
-    .from('profiles')
-    .update({ avatar_url: avatarUrl })
-    .eq('id', userId);
-  if (error) throw error;
+export async function updateAvatar(_userId: string, avatarUrl: string): Promise<void> {
+  await delay(50);
+  _profile = { ..._profile, avatar_url: avatarUrl };
 }
 
-/* Articles completed count */
-export async function fetchArticlesCompletedCount(userId: string): Promise<number> {
-  const { count, error } = await supabase
-    .from('completion_cards')
-    .select('*', { count: 'exact', head: true })
-    .eq('user_id', userId);
-  if (error) throw error;
-  return count ?? 0;
+/* ===================== COUNTS ===================== */
+
+export async function fetchArticlesCompletedCount(_userId: string): Promise<number> {
+  return _completionCards.length;
 }
 
-/* Share cards count */
-export async function fetchShareCardsCount(userId: string): Promise<number> {
-  const { count, error } = await supabase
-    .from('completion_cards')
-    .select('*', { count: 'exact', head: true })
-    .eq('user_id', userId);
-  if (error) throw error;
-  return count ?? 0;
+export async function fetchShareCardsCount(_userId: string): Promise<number> {
+  return _completionCards.length;
 }
 
-/* Opinions submitted count */
-export async function fetchOpinionsCount(userId: string): Promise<number> {
-  const { count, error } = await supabase
-    .from('opinion_submissions')
-    .select('*', { count: 'exact', head: true })
-    .eq('user_id', userId);
-  if (error) throw error;
-  return count ?? 0;
+export async function fetchOpinionsCount(_userId: string): Promise<number> {
+  return _opinionSubmitted.size;
 }
