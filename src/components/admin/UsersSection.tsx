@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { Search, ChevronLeft, ChevronRight, Loader2 } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Loader2 } from 'lucide-react';
 import type { AdminUser, UserStatus } from '@/lib/admin/adminTypes';
 import { fetchUsers, updateUserStatus, updateUserRole } from '@/lib/admin/api';
 import { useToast } from '@/lib/toast';

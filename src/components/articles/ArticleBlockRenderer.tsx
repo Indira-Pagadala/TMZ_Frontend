@@ -8,7 +8,7 @@ import { PodcastBlock } from './blocks/PodcastBlock';
 interface ArticleBlockRendererProps {
   block: ArticleBlock;
   onQuizResult?: (xp: number) => void;
-  onOpinionSubmit?: () => void;
+  onOpinionSubmit?: (opinionText: string) => void;
 }
 
 export function ArticleBlockRenderer({ block, onQuizResult, onOpinionSubmit }: ArticleBlockRendererProps) {

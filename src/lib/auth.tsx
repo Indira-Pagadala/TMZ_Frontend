@@ -6,7 +6,7 @@
 
 import { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
 import type { UserProfile } from '@/types';
-import { fetchProfile, updateProfile } from './api';
+import { fetchProfile } from './api';
 import { DEFAULT_PROFILE } from './mock/data';
 
 /* ---- Minimal User type (replaces @supabase/supabase-js User) ---- */

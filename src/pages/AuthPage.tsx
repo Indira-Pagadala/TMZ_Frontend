@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { BookOpen, Mail, Lock, ArrowRight } from 'lucide-react';
+import { BookOpen, ArrowRight } from 'lucide-react';
 import { useAuth } from '@/lib/auth';
 import { useToast } from '@/lib/toast';
 import { Button } from '@/components/ui/Button';
@@ -40,8 +40,9 @@ export function AuthPage() {
         showToast('Account created! Welcome to The Modern Stories.', 'success');
       }
       navigate(redirect);
-    } catch (err: any) {
-      setError(err?.message || 'Authentication failed. Please try again.');
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : 'Authentication failed. Please try again.';
+      setError(message);
     } finally {
       setLoading(false);
     }
@@ -51,8 +52,9 @@ export function AuthPage() {
     setLoading(true);
     try {
       await signInWithGoogle();
-    } catch (err: any) {
-      setError(err?.message || 'Google sign-in failed');
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : 'Google sign-in failed';
+      setError(message);
       setLoading(false);
     }
   };

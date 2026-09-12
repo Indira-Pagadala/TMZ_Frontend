@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
-import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { ChevronDown, User, LogIn, BookOpen } from 'lucide-react';
+import { Link, useLocation } from 'react-router-dom';
+import { ChevronDown, LogIn, BookOpen } from 'lucide-react';
 import { ThemeToggle } from './ThemeToggle';
 import { useAuth } from '@/lib/auth';
 import type { Category } from '@/types';
@@ -8,7 +8,6 @@ import { fetchCategories } from '@/lib/api';
 
 export function Header() {
   const location = useLocation();
-  const navigate = useNavigate();
   const { user, profile } = useAuth();
   const [categories, setCategories] = useState<Category[]>([]);
   const [catOpen, setCatOpen] = useState(false);
@@ -81,7 +80,14 @@ export function Header() {
               <ChevronDown className={`w-4 h-4 transition-transform ${catOpen ? 'rotate-180' : ''}`} />
             </button>
             {catOpen && (
-              <div className="absolute top-full right-0 mt-2 glass-card p-2 min-w-[200px] animate-scale-in">
+              <div
+                className="absolute top-full right-0 mt-2 p-2 min-w-[210px] rounded-2xl animate-scale-in z-50 shadow-2xl"
+                style={{
+                  backgroundColor: 'var(--bg-card)',
+                  border: '1px solid var(--border-default)',
+                  boxShadow: 'var(--shadow-elevated)',
+                }}
+              >
                 {categories.map((cat) => (
                   <Link
                     key={cat.id}

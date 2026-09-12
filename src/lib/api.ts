@@ -23,16 +23,41 @@ import {
 
 const delay = (ms = 150) => new Promise((r) => setTimeout(r, ms));
 
-/* --------- in-memory session state (resets on page refresh) --------- */
+/* --------- in-memory session state (resets on page refresh, with localStorage persistence for user progression) --------- */
+const COMPLETION_CARDS_STORAGE_KEY = 'tms_completion_cards';
+
+function loadCompletionCards(): CompletionCard[] {
+  try {
+    const raw = localStorage.getItem(COMPLETION_CARDS_STORAGE_KEY);
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        return parsed;
+      }
+    }
+  } catch {
+    // fallback
+  }
+  return [...DEFAULT_COMPLETION_CARDS];
+}
+
+function saveCompletionCards(cards: CompletionCard[]) {
+  try {
+    localStorage.setItem(COMPLETION_CARDS_STORAGE_KEY, JSON.stringify(cards));
+  } catch {
+    // ignore
+  }
+}
+
 let _profile: UserProfile = { ...DEFAULT_PROFILE };
-let _bookmarks = new Set<string>(DEFAULT_SAVED_ARTICLES.map((b) => b.article_id));
-let _readingProgress: Record<string, ReadingProgress> = {};
-let _completedArticleIds = new Set<string>(DEFAULT_COMPLETION_CARDS.map((c) => c.article_id));
-let _completionCards: CompletionCard[] = [...DEFAULT_COMPLETION_CARDS];
+const _bookmarks = new Set<string>(DEFAULT_SAVED_ARTICLES.map((b) => b.article_id));
+const _readingProgress: Record<string, ReadingProgress> = {};
+let _completionCards: CompletionCard[] = loadCompletionCards();
+const _completedArticleIds = new Set<string>(_completionCards.map((c) => c.article_id));
 let _comments: Comment[] = [...COMMENTS];
-let _quizAttempted = new Set<string>();
-let _opinionSubmitted = new Set<string>();
-let _opinions: OpinionSubmission[] = [...DEFAULT_OPINIONS];
+const _quizAttempted = new Set<string>();
+const _opinionSubmitted = new Set<string>();
+const _opinions: OpinionSubmission[] = [...DEFAULT_OPINIONS];
 let _bookmarkList: Bookmark[] = DEFAULT_SAVED_ARTICLES.map((s) => ({
   id: s.id,
   user_id: s.user_id,
@@ -267,34 +292,47 @@ export async function createCompletionCard(
   articleId: string,
   articleTitle: string,
   xpGained: number,
-): Promise<CompletionResult> {
+  cardType: 'completion' | 'opinion' = 'completion',
+  opinionText?: string,
+): Promise<CompletionResult & { card?: CompletionCard }> {
   await delay();
 
-  if (_completedArticleIds.has(articleId)) {
+  // Prevent duplicate cards for the same article and type
+  const existing = _completionCards.find(
+    (c) => c.article_id === articleId && (c.card_type ?? 'completion') === cardType
+  );
+  if (existing) {
     return {
-      card_id: '',
+      card_id: existing.id,
       xp_gained: 0,
       total_xp: _profile.xp,
       new_level: _profile.level,
       already_completed: true,
+      card: existing,
     };
   }
 
-  _completedArticleIds.add(articleId);
+  if (cardType === 'completion') {
+    _completedArticleIds.add(articleId);
+  }
+
   const newXp = _profile.xp + xpGained;
   const newLevel = LEVELS.filter((l) => l.xp_threshold <= newXp).length;
 
   _profile = { ..._profile, xp: newXp, level: newLevel };
 
   const card: CompletionCard = {
-    id: `cc-${Date.now()}`,
+    id: `cc-${cardType === 'opinion' ? 'op-' : ''}${Date.now()}`,
     user_id: userId,
     article_id: articleId,
     article_title: articleTitle,
     xp_gained: xpGained,
     created_at: new Date().toISOString(),
+    card_type: cardType,
+    opinion_text: opinionText,
   };
   _completionCards = [card, ..._completionCards];
+  saveCompletionCards(_completionCards);
 
   return {
     card_id: card.id,
@@ -302,12 +340,33 @@ export async function createCompletionCard(
     total_xp: newXp,
     new_level: newLevel,
     already_completed: false,
+    card,
+  };
+}
+
+export async function createOpinionCard(
+  userId: string,
+  articleId: string,
+  articleTitle: string,
+  opinionText: string,
+  xpGained = 50,
+): Promise<CompletionCard> {
+  const result = await createCompletionCard(userId, articleId, articleTitle, xpGained, 'opinion', opinionText);
+  return result.card || {
+    id: result.card_id,
+    user_id: userId,
+    article_id: articleId,
+    article_title: articleTitle,
+    xp_gained: xpGained,
+    created_at: new Date().toISOString(),
+    card_type: 'opinion',
+    opinion_text: opinionText,
   };
 }
 
 export async function hasCompletionCard(_userId: string, articleId: string): Promise<boolean> {
   await delay(50);
-  return _completedArticleIds.has(articleId);
+  return _completedArticleIds.has(articleId) || _completionCards.some((c) => c.article_id === articleId);
 }
 
 /* ===================== TEAM ===================== */

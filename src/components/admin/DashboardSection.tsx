@@ -4,7 +4,6 @@ import {
   MousePointerClick, TrendingUp, ArrowRight, Loader2,
 } from 'lucide-react';
 import { GlassCard } from '@/components/ui/GlassCard';
-import { Button } from '@/components/ui/Button';
 import { fetchAnalytics } from '@/lib/admin/api';
 import type { AnalyticsData } from '@/lib/admin/adminTypes';
 

@@ -1,7 +1,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import {
-  FileText, Plus, Edit3, Trash2, Eye, Send, Globe, GlobeLock,
-  Calendar, Archive, Star, ArrowLeft, Save, Loader2, GripVertical,
+  FileText, Plus, Edit3, Trash2, Send, Globe, GlobeLock,
+  Archive, Star, ArrowLeft, Save, Loader2, GripVertical,
   Type, Image as ImageIcon, HelpCircle, MessageSquare, Mic, X,
   Check, ChevronUp, ChevronDown, AlertCircle, Copy,
 } from 'lucide-react';
@@ -78,7 +78,7 @@ export function ArticlesSection({ editorArticleId, setEditorArticleId }: Article
       const data = await fetchArticles(filters);
       setArticles(data);
     } catch {
-      useToast.prototype;
+      /* ignore */
     } finally {
       setLoading(false);
     }
@@ -121,13 +121,6 @@ export function ArticlesSection({ editorArticleId, setEditorArticleId }: Article
     try {
       await deleteArticle(deleteTarget.id);
       setDeleteTarget(null);
-      loadArticles();
-    } catch { /* ignore */ }
-  };
-
-  const handleStatusChange = async (article: AdminArticle, newStatus: ArticleStatus) => {
-    try {
-      await updateArticle(article.id, { status: newStatus });
       loadArticles();
     } catch { /* ignore */ }
   };

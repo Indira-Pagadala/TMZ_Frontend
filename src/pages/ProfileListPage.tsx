@@ -2,11 +2,12 @@ import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import {
   ArrowLeft, CheckCircle2, Award, Trophy, Share2, MessageSquare,
-  BookOpen, Target, Sparkles, Lock,
+  BookOpen, Target, Lock,
 } from 'lucide-react';
 import { useAuth } from '@/lib/auth';
 import { GlassCard } from '@/components/ui/GlassCard';
 import { LoadingState, ErrorState, Modal } from '@/components/ui/States';
+import { CompletionCard as CompletionCardComponent } from '@/components/articles/CompletionCard';
 import {
   fetchCompletedArticles,
   fetchAllBadges,
@@ -248,8 +249,10 @@ function AchievementsList({ userId }: { userId: string }) {
 /* ===== Shareable Cards ===== */
 
 function CardsList({ userId }: { userId: string }) {
+  const { profile } = useAuth();
   const [items, setItems] = useState<CompletionCard[]>([]);
   const [loading, setLoading] = useState(true);
+  const [selectedCard, setSelectedCard] = useState<CompletionCard | null>(null);
 
   useEffect(() => {
     fetchCompletionCards(userId)
@@ -262,21 +265,48 @@ function CardsList({ userId }: { userId: string }) {
   if (items.length === 0) return <EmptyMessage message="No shareable cards yet." />;
 
   return (
-    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-      {items.map((card) => (
-        <GlassCard key={card.id} className="p-4 h-full">
+    <>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        {items.map((card) => (
           <div
-            className="aspect-[3/4] rounded-xl mb-3 flex flex-col items-center justify-center p-4 text-center"
-            style={{ background: 'linear-gradient(135deg, var(--brand-primary), var(--brand-dark))' }}
+            key={card.id}
+            onClick={() => setSelectedCard(card)}
+            className="cursor-pointer transition-transform hover:-translate-y-1"
           >
-            <Sparkles className="w-8 h-8 text-white mb-2" />
-            <p className="text-white font-display text-sm leading-tight line-clamp-3">{card.article_title}</p>
-            <p className="text-white/70 text-xs mt-2">+{card.xp_gained} XP</p>
+            <CompletionCardComponent
+              cardType={card.card_type ?? 'completion'}
+              username={profile?.display_name ?? 'Reader'}
+              articleTitle={card.article_title}
+              articleId={card.article_id}
+              xpGained={card.xp_gained}
+              opinionText={card.opinion_text}
+              interactive={true}
+            />
           </div>
-          <p className="text-xs text-muted text-center">{formatRelativeTime(card.created_at)}</p>
-        </GlassCard>
-      ))}
-    </div>
+        ))}
+      </div>
+
+      {selectedCard && (
+        <div className="fixed inset-0 z-[350] flex items-center justify-center p-4">
+          <div
+            className="absolute inset-0 transition-opacity"
+            style={{ background: 'var(--modal-overlay)', backdropFilter: 'blur(10px)' }}
+            onClick={() => setSelectedCard(null)}
+          />
+          <div className="relative z-10 w-full max-w-lg animate-scale-in">
+            <CompletionCardComponent
+              cardType={selectedCard.card_type ?? 'completion'}
+              username={profile?.display_name ?? 'Reader'}
+              articleTitle={selectedCard.article_title}
+              articleId={selectedCard.article_id}
+              xpGained={selectedCard.xp_gained}
+              opinionText={selectedCard.opinion_text}
+              onClose={() => setSelectedCard(null)}
+            />
+          </div>
+        </div>
+      )}
+    </>
   );
 }
 

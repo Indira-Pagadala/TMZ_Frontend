@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from 'react';
+import { useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   LayoutDashboard, FileText, FolderTree, HelpCircle, MessageSquare,
@@ -7,7 +7,6 @@ import {
   ShieldAlert, Loader2,
 } from 'lucide-react';
 import { useAuth } from '@/lib/auth';
-import { useTheme } from '@/lib/theme';
 import { ThemeToggle } from '@/components/layout/ThemeToggle';
 import { searchArticles } from '@/lib/admin/api';
 import type { AdminArticle } from '@/lib/admin/adminTypes';
@@ -288,7 +287,7 @@ export function SuperAdminPage() {
 /* ===== Sidebar Content ===== */
 
 function SidebarContent({
-  items, activeKey, onSelect, collapsed, onToggleCollapse, profile, onSignOut, onClose,
+  items, activeKey, onSelect, collapsed, onToggleCollapse, profile: _profile, onSignOut, onClose,
 }: {
   items: NavItem[];
   activeKey: SectionKey;
