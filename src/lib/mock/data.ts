@@ -6,7 +6,7 @@
 import type {
   Category, Promotion, Article, ArticleWithBlocks, Comment,
   Level, Badge, UserBadge, CompletionCard, TeamMember,
-  ReadingHistoryItem, SavedArticleItem, QuizStats,
+  ReadingHistoryItem, SavedArticleItem,
   OpinionWithArticle, AchievementItem, UserProfile,
 } from '@/types';
 
@@ -240,8 +240,9 @@ export const DEFAULT_USER_BADGES: UserBadge[] = [
 ];
 
 export const DEFAULT_COMPLETION_CARDS: CompletionCard[] = [
-  { id: 'cc-1', user_id: 'mock-user-id', article_id: 'art-2', article_title: ARTICLES[1].title, xp_gained: 45, created_at: '2026-09-09T09:00:00Z' },
-  { id: 'cc-2', user_id: 'mock-user-id', article_id: 'art-3', article_title: ARTICLES[2].title, xp_gained: 30, created_at: '2026-09-08T13:00:00Z' },
+  { id: 'cc-1', user_id: 'mock-user-id', article_id: 'art-2', article_title: ARTICLES[1].title, xp_gained: 45, created_at: '2026-09-09T09:00:00Z', card_type: 'completion' },
+  { id: 'cc-2', user_id: 'mock-user-id', article_id: 'art-1', article_title: ARTICLES[0].title, xp_gained: 50, created_at: '2026-09-10T15:00:00Z', card_type: 'opinion', opinion_text: 'Somewhat concerned — it will affect some roles' },
+  { id: 'cc-3', user_id: 'mock-user-id', article_id: 'art-3', article_title: ARTICLES[2].title, xp_gained: 30, created_at: '2026-09-08T13:00:00Z', card_type: 'completion' },
 ];
 
 export const DEFAULT_READING_HISTORY: ReadingHistoryItem[] = [

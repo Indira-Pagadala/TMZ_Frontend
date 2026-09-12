@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { Send, Trash2, MessageSquare } from 'lucide-react';
 import type { Comment } from '@/types';
 import { useAuth } from '@/lib/auth';
@@ -17,7 +17,7 @@ export function CommentsSection({ articleId }: { articleId: string }) {
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
 
-  const loadComments = async (p: number) => {
+  const loadComments = useCallback(async (p: number) => {
     try {
       const newComments = await fetchComments(articleId, p);
       if (p === 1) {
@@ -31,11 +31,11 @@ export function CommentsSection({ articleId }: { articleId: string }) {
     } finally {
       setLoading(false);
     }
-  };
+  }, [articleId]);
 
   useEffect(() => {
     loadComments(1);
-  }, [articleId]);
+  }, [loadComments]);
 
   const handleSubmit = async () => {
     if (!user) return;

@@ -3,12 +3,13 @@ import { useNavigate } from 'react-router-dom';
 import {
   BookOpen, Trophy, Target, MessageSquare, Award, Share2,
   Clock, TrendingUp, CheckCircle2, Lock, ChevronRight, Settings,
-  Sparkles, Zap, Star, BarChart3,
+  Zap, Star, BarChart3,
 } from 'lucide-react';
 import { useAuth } from '@/lib/auth';
 import { useToast } from '@/lib/toast';
 import { Modal } from '@/components/ui/States';
 import { GlassCard } from '@/components/ui/GlassCard';
+import { CompletionCard as CompletionCardComponent } from '@/components/articles/CompletionCard';
 import {
   fetchLevels, fetchLevelByNumber, fetchUserBadges, fetchCompletionCards,
   fetchReadingHistory, fetchCompletedArticles, fetchSavedArticles,
@@ -47,7 +48,7 @@ export function ProfilePage() {
 /* ===== Profile Overview ===== */
 
 function ProfileOverview() {
-  const { user, profile, refreshProfile } = useAuth();
+  const { user, profile } = useAuth();
   const { showToast } = useToast();
   const navigate = useNavigate();
 
@@ -288,25 +289,25 @@ function ProfileOverview() {
       {/* Shareable Cards */}
       <Section title="Shareable Cards" icon={Share2} action="View all" onAction={() => navigate('/profile/cards')}>
         {completionCards.length === 0 ? (
-          <EmptyStateCard icon={Share2} message="No shareable cards yet. Complete an article to earn one." />
+          <EmptyStateCard icon={Share2} message="No shareable cards yet. Complete an article or share your opinion to earn one." />
         ) : (
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {completionCards.slice(0, 4).map((card) => (
-              <button
+              <div
                 key={card.id}
                 onClick={() => setSelectedCard(card)}
-                className="text-left group"
+                className="cursor-pointer transition-transform hover:-translate-y-1"
               >
-                <GlassCard className="p-4 h-full">
-                  <div className="aspect-[3/4] rounded-xl mb-3 flex flex-col items-center justify-center p-4 text-center"
-                    style={{ background: 'linear-gradient(135deg, var(--brand-primary), var(--brand-dark))' }}>
-                    <Sparkles className="w-8 h-8 text-white mb-2" />
-                    <p className="text-white font-display text-sm leading-tight line-clamp-3">{card.article_title}</p>
-                    <p className="text-white/70 text-xs mt-2">+{card.xp_gained} XP</p>
-                  </div>
-                  <p className="text-xs text-muted text-center">Tap to view & share</p>
-                </GlassCard>
-              </button>
+                <CompletionCardComponent
+                  cardType={card.card_type ?? 'completion'}
+                  username={profile?.display_name ?? 'Reader'}
+                  articleTitle={card.article_title}
+                  articleId={card.article_id}
+                  xpGained={card.xp_gained}
+                  opinionText={card.opinion_text}
+                  interactive={true}
+                />
+              </div>
             ))}
           </div>
         )}
@@ -353,9 +354,24 @@ function ProfileOverview() {
 
       {/* Share Card Modal */}
       {selectedCard && (
-        <Modal isOpen={!!selectedCard} onClose={() => setSelectedCard(null)}>
-          <ShareCardModal card={selectedCard} displayName={profile?.display_name ?? 'Reader'} />
-        </Modal>
+        <div className="fixed inset-0 z-[350] flex items-center justify-center p-4">
+          <div
+            className="absolute inset-0 transition-opacity"
+            style={{ background: 'var(--modal-overlay)', backdropFilter: 'blur(10px)' }}
+            onClick={() => setSelectedCard(null)}
+          />
+          <div className="relative z-10 w-full max-w-lg animate-scale-in">
+            <CompletionCardComponent
+              cardType={selectedCard.card_type ?? 'completion'}
+              username={profile?.display_name ?? 'Reader'}
+              articleTitle={selectedCard.article_title}
+              articleId={selectedCard.article_id}
+              xpGained={selectedCard.xp_gained}
+              opinionText={selectedCard.opinion_text}
+              onClose={() => setSelectedCard(null)}
+            />
+          </div>
+        </div>
       )}
     </div>
   );
@@ -364,7 +380,7 @@ function ProfileOverview() {
 /* ===== Profile Header ===== */
 
 function ProfileHeader({
-  profile, currentLevel, xpCurrent, xpPct, xpFloor, xpCeiling, xpToNext, hasNext,
+  profile, currentLevel, xpCurrent, xpPct, xpFloor: _xpFloor, xpCeiling, xpToNext, hasNext,
 }: {
   profile: { display_name: string; email: string; avatar_url: string | null; level: number; xp: number };
   currentLevel: Level | null;
@@ -641,83 +657,6 @@ function AchievementRow({ achievement }: { achievement: AchievementItem }) {
         <p className="text-xs text-muted mt-0.5">{formatRelativeTime(achievement.date)}</p>
       </div>
     </GlassCard>
-  );
-}
-
-/* ===== Share Card Modal ===== */
-
-function ShareCardModal({ card, displayName }: { card: CompletionCard; displayName: string }) {
-  const shareUrl = `${window.location.origin}/article/${card.article_id}`;
-  const shareText = `I just completed "${card.article_title}" on The Modern Stories and earned ${card.xp_gained} XP!`;
-
-  const handleShare = async (method: 'native' | 'twitter' | 'facebook' | 'copy') => {
-    if (method === 'native' && navigator.share) {
-      try { await navigator.share({ title: card.article_title, text: shareText, url: shareUrl }); } catch {}
-    } else if (method === 'twitter') {
-      window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(shareText)}&url=${encodeURIComponent(shareUrl)}`, '_blank');
-    } else if (method === 'facebook') {
-      window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareUrl)}`, '_blank');
-    } else if (method === 'copy') {
-      try { await navigator.clipboard.writeText(`${shareText} ${shareUrl}`); } catch {}
-    }
-  };
-
-  return (
-    <div>
-      <div
-        className="aspect-[3/4] rounded-2xl flex flex-col items-center justify-center p-8 text-center mb-6"
-        style={{ background: 'linear-gradient(135deg, var(--brand-primary), var(--brand-dark))' }}
-      >
-        <BookOpen className="w-12 h-12 text-white mb-4" />
-        <p className="text-white/70 text-sm uppercase tracking-wider mb-2">The Modern Stories</p>
-        <h3 className="text-white font-display text-xl leading-tight mb-4">{card.article_title}</h3>
-        <div className="w-16 h-px bg-white/30 mb-4" />
-        <p className="text-white font-display text-3xl">+{card.xp_gained} XP</p>
-        <p className="text-white/70 text-sm mt-2">{displayName}</p>
-      </div>
-
-      <div className="grid grid-cols-2 gap-3">
-        {typeof navigator.share === 'function' && (
-          <button onClick={() => handleShare('native')} className="btn-primary text-sm py-3 flex items-center justify-center gap-2">
-            <Share2 className="w-4 h-4" /> Share
-          </button>
-        )}
-        <button onClick={() => handleShare('twitter')} className="btn-secondary text-sm py-3 flex items-center justify-center gap-2">
-          <TwitterIcon /> Twitter
-        </button>
-        <button onClick={() => handleShare('facebook')} className="btn-secondary text-sm py-3 flex items-center justify-center gap-2">
-          <FacebookIcon /> Facebook
-        </button>
-        <button onClick={() => handleShare('copy')} className="btn-secondary text-sm py-3 flex items-center justify-center gap-2">
-          <CopyIcon /> Copy Link
-        </button>
-      </div>
-    </div>
-  );
-}
-
-function TwitterIcon() {
-  return (
-    <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
-      <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.91l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
-    </svg>
-  );
-}
-
-function FacebookIcon() {
-  return (
-    <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
-      <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z" />
-    </svg>
-  );
-}
-
-function CopyIcon() {
-  return (
-    <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <rect width="14" height="14" x="8" y="8" rx="2" ry="2" />
-      <path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2" />
-    </svg>
   );
 }
 

@@ -1,7 +1,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import {
-  FileText, Plus, Edit3, Trash2, Eye, Send, Globe, GlobeLock,
-  Calendar, Archive, Star, ArrowLeft, Save, Loader2, GripVertical,
+  FileText, Plus, Edit3, Trash2, Send, Globe, GlobeLock,
+  Archive, Star, ArrowLeft, Save, Loader2, GripVertical,
   Type, Image as ImageIcon, HelpCircle, MessageSquare, Mic, X,
   Check, ChevronUp, ChevronDown, AlertCircle,
 } from 'lucide-react';
@@ -68,7 +68,7 @@ export function ArticlesSection({ editorArticleId, setEditorArticleId }: Article
       const data = await fetchArticles(filters);
       setArticles(data);
     } catch {
-      useToast.prototype;
+      /* ignore */
     } finally {
       setLoading(false);
     }
@@ -111,13 +111,6 @@ export function ArticlesSection({ editorArticleId, setEditorArticleId }: Article
     try {
       await deleteArticle(deleteTarget.id);
       setDeleteTarget(null);
-      loadArticles();
-    } catch { /* ignore */ }
-  };
-
-  const handleStatusChange = async (article: AdminArticle, newStatus: ArticleStatus) => {
-    try {
-      await updateArticle(article.id, { status: newStatus });
       loadArticles();
     } catch { /* ignore */ }
   };
@@ -365,7 +358,7 @@ function ArticleEditor({
   const [isAuthorsPick, setIsAuthorsPick] = useState(article?.is_authors_pick ?? false);
   const [readingTime, setReadingTime] = useState(article?.reading_time_minutes ?? 5);
   const [coverImage, setCoverImage] = useState(article?.cover_image_url ?? '');
-  const [status, setStatus] = useState<ArticleStatus>(article?.status ?? 'DRAFT');
+  const [status] = useState<ArticleStatus>(article?.status ?? 'DRAFT');
   const [blocks, setBlocks] = useState<EditorBlock[]>([]);
   const [showBlockPicker, setShowBlockPicker] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);

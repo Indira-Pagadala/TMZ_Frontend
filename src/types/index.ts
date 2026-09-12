@@ -174,6 +174,8 @@ export interface CompletionCard {
   article_title: string;
   xp_gained: number;
   created_at: string;
+  card_type?: 'completion' | 'opinion';
+  opinion_text?: string;
 }
 
 export interface TeamMember {

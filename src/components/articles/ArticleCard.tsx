@@ -1,6 +1,7 @@
 import { useNavigate } from 'react-router-dom';
 import type { Article } from '@/types';
 import { BookmarkButton } from './BookmarkButton';
+import { GlowingEffect } from './GlowingEffect';
 import { useAuth } from '@/lib/auth';
 
 interface ArticleCardProps {
@@ -31,9 +32,10 @@ export function ArticleCard({ article, showType = true, variant = 'default' }: A
     return (
       <div
         onClick={handleClick}
-        className="glass-card overflow-hidden cursor-pointer group"
+        className="relative glass-card overflow-hidden cursor-pointer group flex flex-col"
       >
-        <div className="relative h-40 overflow-hidden">
+        <GlowingEffect borderWidth={1.5} spread={40} glow={true} />
+        <div className="relative h-44 overflow-hidden flex-shrink-0">
           {article.cover_image_url && (
             <img
               src={article.cover_image_url}
@@ -42,17 +44,18 @@ export function ArticleCard({ article, showType = true, variant = 'default' }: A
               loading="lazy"
             />
           )}
-          <div className="absolute top-3 right-3">
+          <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent" />
+          <div className="absolute top-3 right-3 z-20">
             <BookmarkButton articleId={article.id} size="sm" />
           </div>
           {showType && (
-            <span className="absolute top-3 left-3 px-2.5 py-1 rounded-full glass text-xs text-primary font-body">
+            <span className="absolute top-3 left-3 z-20 px-2.5 py-1 rounded-full glass text-xs text-primary font-body">
               {typeLabel}
             </span>
           )}
         </div>
-        <div className="p-4">
-          <h3 className="font-display text-base text-primary leading-snug mb-1 line-clamp-2">{article.title}</h3>
+        <div className="p-3.5 relative z-20 flex flex-col justify-center">
+          <h3 className="font-display text-sm sm:text-base font-semibold text-primary leading-snug mb-1 line-clamp-2">{article.title}</h3>
           <p className="text-xs text-muted line-clamp-1">{article.subtitle}</p>
         </div>
       </div>
@@ -62,9 +65,10 @@ export function ArticleCard({ article, showType = true, variant = 'default' }: A
   return (
     <div
       onClick={handleClick}
-      className="glass-card overflow-hidden cursor-pointer group h-full flex flex-col"
+      className="relative glass-card overflow-hidden cursor-pointer group h-full flex flex-col"
     >
-      <div className="relative h-56 overflow-hidden">
+      <GlowingEffect borderWidth={1.5} spread={40} glow={true} />
+      <div className="relative h-64 sm:h-72 md:h-80 overflow-hidden flex-shrink-0">
         {article.cover_image_url && (
           <img
             src={article.cover_image_url}
@@ -73,19 +77,19 @@ export function ArticleCard({ article, showType = true, variant = 'default' }: A
             loading="lazy"
           />
         )}
-        <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent" />
-        <div className="absolute top-3 right-3">
+        <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent" />
+        <div className="absolute top-3 right-3 z-20">
           <BookmarkButton articleId={article.id} size="sm" />
         </div>
         {showType && (
-          <span className="absolute top-3 left-3 px-3 py-1 rounded-full glass text-xs text-primary font-body">
+          <span className="absolute top-3 left-3 z-20 px-3 py-1 rounded-full glass text-xs text-primary font-body">
             {typeLabel}
           </span>
         )}
       </div>
-      <div className="p-5 flex-1 flex flex-col">
-        <h3 className="font-display text-lg text-primary leading-snug mb-2 line-clamp-2">{article.title}</h3>
-        <p className="text-sm text-muted line-clamp-2 mb-3 flex-1">{article.subtitle}</p>
+      <div className="p-4 flex-1 flex flex-col justify-center relative z-20">
+        <h3 className="font-display text-base sm:text-lg font-semibold text-primary leading-snug mb-1 line-clamp-2">{article.title}</h3>
+        <p className="text-xs sm:text-sm text-muted line-clamp-2">{article.subtitle}</p>
       </div>
     </div>
   );

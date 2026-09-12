@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { ArrowLeft, Home, Layers, User } from 'lucide-react';
-import type { ArticleWithBlocks, Level, Badge, ReadingProgress as ProgressType, Article } from '@/types';
+import type { ArticleWithBlocks, Level, Badge, Article } from '@/types';
 import { useAuth } from '@/lib/auth';
 import { useToast } from '@/lib/toast';
 import {
@@ -10,6 +10,7 @@ import {
   updateReadingProgress,
   hasCompletionCard,
   createCompletionCard,
+  createOpinionCard,
   fetchProfile,
   fetchLevels,
   fetchLevelByNumber,
@@ -33,18 +34,17 @@ const LOCK_PERCENT = 40;
 export function ArticlePage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { user, profile } = useAuth();
+  const { user, profile, refreshProfile } = useAuth();
   const { showToast } = useToast();
 
   const [article, setArticle] = useState<ArticleWithBlocks | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
   const [unlockedPct, setUnlockedPct] = useState(0);
-  const [savedProgress, setSavedProgress] = useState<ProgressType | null>(null);
   const [showXp, setShowXp] = useState(false);
   const [totalXp, setTotalXp] = useState(0);
-  const [xpBreakdown, setXpBreakdown] = useState<{ label: string; amount: number }[]>([]);
-  const [showCompletionCard, setShowCompletionCard] = useState(false);
+  const [_xpBreakdown, setXpBreakdown] = useState<{ label: string; amount: number }[]>([]);
+  const [showCompletionModal, setShowCompletionModal] = useState(false);
   const [levelUp, setLevelUp] = useState<Level | null>(null);
   const [levelUpPrev, setLevelUpPrev] = useState<Level | null>(null);
   const [levelUpNextXp, setLevelUpNextXp] = useState<number | null>(null);
@@ -53,13 +53,18 @@ export function ArticlePage() {
   const [completionChecked, setCompletionChecked] = useState(false);
   const [sidebarLatest, setSidebarLatest] = useState<Article[]>([]);
   const [sidebarPicks, setSidebarPicks] = useState<Article[]>([]);
-  const [opinionXpEarned, setOpinionXpEarned] = useState(0);
-  const [hasSavedScroll, setHasSavedScroll] = useState(false);
+  const [completionCardXp, setCompletionCardXp] = useState(30);
+  const [opinionModalData, setOpinionModalData] = useState<{
+    opinionText: string;
+    xpGained: number;
+  } | null>(null);
 
   const contentRef = useRef<HTMLDivElement>(null);
   const articleRef = useRef<HTMLDivElement>(null);
   const lastSaveRef = useRef<number>(0);
   const quizXpRef = useRef<number>(0);
+  const userDidScrollRef = useRef<boolean>(false);
+  const completionTriggeredRef = useRef<boolean>(false);
 
   // Scroll to top on every article open — do NOT inherit previous scroll position
   useEffect(() => {
@@ -72,13 +77,15 @@ export function ArticlePage() {
     setLoading(true);
     setError(false);
     setUnlockedPct(0);
-    setShowCompletionCard(false);
+    setShowCompletionModal(false);
+    setOpinionModalData(null);
+    completionTriggeredRef.current = false;
+    userDidScrollRef.current = false;
     setCompletionChecked(false);
     setTotalXp(0);
     setXpBreakdown([]);
-    setOpinionXpEarned(0);
+    setCompletionCardXp(30);
     quizXpRef.current = 0;
-    setHasSavedScroll(false);
     fetchArticleById(id)
       .then((art) => { if (!art) { setError(true); return; } setArticle(art); })
       .catch(() => setError(true))
@@ -97,10 +104,8 @@ export function ArticlePage() {
     fetchReadingProgress(user.id, id)
       .then((p) => {
         if (p) {
-          setSavedProgress(p);
           setUnlockedPct(p.percentage);
           if (p.scroll_position > 0) {
-            setHasSavedScroll(true);
             setTimeout(() => window.scrollTo({ top: p.scroll_position, behavior: 'smooth' }), 400);
           }
         }
@@ -108,12 +113,11 @@ export function ArticlePage() {
       .catch(() => {});
   }, [user, id]);
 
-  // Check for existing completion card
+  // Check for existing completion card (do NOT show modal on initial load)
   useEffect(() => {
     if (!user || !id) return;
-    hasCompletionCard(user.id, id).then((exists) => {
+    hasCompletionCard(user.id, id).then(() => {
       setCompletionChecked(true);
-      if (exists) setShowCompletionCard(true);
     }).catch(() => setCompletionChecked(true));
   }, [user, id]);
 
@@ -123,6 +127,7 @@ export function ArticlePage() {
 
     const handleScroll = () => {
       if (!contentRef.current) return;
+      userDidScrollRef.current = true;
       const el = contentRef.current;
       const rect = el.getBoundingClientRect();
       const windowHeight = window.innerHeight;
@@ -154,78 +159,80 @@ export function ArticlePage() {
 
   // Completion — only when user has genuinely scrolled to 100%
   useEffect(() => {
-    if (!user || !id || !article || unlockedPct < 100 || !completionChecked || showCompletionCard) return;
+    if (!user || !id || !article || unlockedPct < 100 || !completionChecked || completionTriggeredRef.current) return;
+    // Trigger ONLY after genuine article completion/reading progress, NOT on open
+    if (!userDidScrollRef.current) return;
+
+    completionTriggeredRef.current = true;
 
     const checkCompletion = async () => {
       try {
-        const completionXp = 30;
-        const result = await createCompletionCard(user.id, id, article.title, completionXp);
+        const completionXp = 30 + quizXpRef.current;
+        setCompletionCardXp(completionXp);
+        setTotalXp(completionXp);
+        const result = await createCompletionCard(user.id, id, article.title, completionXp, 'completion');
 
-        if (result.already_completed) {
-          setShowCompletionCard(true);
-          return;
-        }
+        if (!result.already_completed) {
+          setShowXp(true);
+          await refreshProfile();
 
-        const breakdown = [
-          { label: 'Article Completion', amount: completionXp },
-          { label: 'Quiz Answers', amount: quizXpRef.current },
-        ];
-        if (opinionXpEarned > 0) {
-          breakdown.push({ label: 'Opinion / Share', amount: opinionXpEarned });
-        }
-        const total = breakdown.reduce((sum, b) => sum + b.amount, 0);
-        setXpBreakdown(breakdown);
-        setTotalXp(total);
-        setShowXp(true);
+          const updatedProfile = await fetchProfile(user.id);
+          if (updatedProfile && profile && result.new_level > profile.level) {
+            const newLevel = await fetchLevelByNumber(result.new_level);
+            const prevLevel = await fetchLevelByNumber(profile.level);
+            const levels = await fetchLevels();
+            const nextLevel = levels.find((l) => l.level_number === result.new_level + 1);
+            if (newLevel) {
+              setLevelUp(newLevel);
+              setLevelUpPrev(prevLevel);
+              setLevelUpNextXp(nextLevel?.xp_threshold ?? null);
+              setLevelUpCurrentXp(result.total_xp);
+            }
+          }
 
-        const updatedProfile = await fetchProfile(user.id);
-        if (updatedProfile && profile && result.new_level > profile.level) {
-          const newLevel = await fetchLevelByNumber(result.new_level);
-          const prevLevel = await fetchLevelByNumber(profile.level);
-          const levels = await fetchLevels();
-          const nextLevel = levels.find((l) => l.level_number === result.new_level + 1);
-          if (newLevel) {
-            setLevelUp(newLevel);
-            setLevelUpPrev(prevLevel);
-            setLevelUpNextXp(nextLevel?.xp_threshold ?? null);
-            setLevelUpCurrentXp(result.total_xp);
+          const badges = await fetchUserBadges(user.id);
+          if (badges.length > 0 && badges[0].badge) {
+            const recentBadge = badges[0];
+            const recentTime = new Date(recentBadge.earned_at).getTime();
+            if (Date.now() - recentTime < 10000) {
+              setBadgePopup(recentBadge.badge ?? null);
+            }
           }
         }
 
-        const badges = await fetchUserBadges(user.id);
-        if (badges.length > 0 && badges[0].badge) {
-          const recentBadge = badges[0];
-          const recentTime = new Date(recentBadge.earned_at).getTime();
-          if (Date.now() - recentTime < 10000) {
-            setBadgePopup(recentBadge.badge ?? null);
-          }
-        }
-
-        setShowCompletionCard(true);
+        // Show the completion modal popup
+        setShowCompletionModal(true);
       } catch {
         showToast('Could not save completion', 'error');
       }
     };
 
     checkCompletion();
-  }, [unlockedPct, user, id, article, completionChecked, showCompletionCard, profile, showToast, opinionXpEarned]);
+  }, [unlockedPct, user, id, article, completionChecked, profile, showToast, refreshProfile]);
 
   const handleQuizResult = useCallback((xp: number) => {
     quizXpRef.current += xp;
     setShowXp(true);
     setTotalXp((prev) => prev + xp);
-    setXpBreakdown((prev) => [...prev, { label: 'Quiz Answer', amount: xp }]);
     setTimeout(() => setShowXp(false), 2000);
   }, []);
 
-  const handleOpinionSubmit = useCallback(() => {
+  const handleOpinionSubmit = useCallback(async (opinionText: string) => {
+    if (!user || !article || !id) return;
     const opinionXp = 50;
-    setOpinionXpEarned(opinionXp);
     setShowXp(true);
-    setTotalXp((prev) => prev + opinionXp);
-    setXpBreakdown((prev) => [...prev, { label: 'Opinion Submission', amount: opinionXp }]);
+    try {
+      await createOpinionCard(user.id, id, article.title, opinionText, opinionXp);
+      await refreshProfile();
+      setOpinionModalData({
+        opinionText,
+        xpGained: opinionXp,
+      });
+    } catch {
+      /* fallback */
+    }
     setTimeout(() => setShowXp(false), 2000);
-  }, []);
+  }, [user, article, id, refreshProfile]);
 
   const handleBack = useCallback(() => {
     if (window.history.length > 1) { navigate(-1); } else { navigate('/'); }
@@ -258,13 +265,13 @@ export function ArticlePage() {
         </button>
       </aside>
 
-      {/* Split layout: 2/3 main + 1/3 sidebar */}
-      <div className="relative z-10 lg:ml-16 max-w-7xl mx-auto px-4 md:px-8 py-8">
-        <div className="flex flex-col lg:flex-row gap-8">
-          {/* Main column */}
-          <div className="lg:w-2/3">
+      {/* Main responsive layout container */}
+      <div className="relative z-10 lg:ml-16 max-w-[1440px] 2xl:max-w-[1600px] mx-auto px-4 sm:px-6 md:px-8 lg:px-10 py-6 md:py-8">
+        <div className="flex flex-col lg:flex-row gap-8 xl:gap-10 items-start">
+          {/* Main column - responsive majority of width */}
+          <div className="flex-1 min-w-0 w-full">
             {/* Top controls */}
-            <div className="flex items-center justify-between mb-8">
+            <div className="flex items-center justify-between mb-6 md:mb-8">
               <button onClick={handleBack} className="flex items-center gap-2 text-sm text-secondary hover:text-primary transition-colors">
                 <ArrowLeft className="w-4 h-4" />
                 Back
@@ -273,7 +280,7 @@ export function ArticlePage() {
             </div>
 
             {/* Article surface */}
-            <article ref={articleRef} className="article-surface p-6 md:p-12">
+            <article ref={articleRef} className="article-surface p-6 sm:p-8 md:p-12 w-full">
               {/* Header */}
               <div className="mb-8">
                 <div className="flex items-center gap-2 mb-4">
@@ -284,10 +291,10 @@ export function ArticlePage() {
                   )}
                   <span className="text-xs text-muted">{typeLabel}</span>
                 </div>
-                <h1 className="font-display text-3xl md:text-4xl leading-tight mb-3" style={{ color: 'var(--article-text)' }}>
+                <h1 className="font-display text-2xl sm:text-3xl md:text-4xl leading-tight mb-3" style={{ color: 'var(--article-text)' }}>
                   {article.title}
                 </h1>
-                <p className="text-lg leading-relaxed" style={{ color: 'var(--article-muted)' }}>
+                <p className="text-base sm:text-lg leading-relaxed" style={{ color: 'var(--article-muted)' }}>
                   {article.subtitle}
                 </p>
               </div>
@@ -323,12 +330,12 @@ export function ArticlePage() {
             </article>
           </div>
 
-          {/* Sidebar column */}
-          <aside className="lg:w-1/3 space-y-8">
+          {/* Sticky Sidebar on desktop, responsive stack below on mobile/tablet */}
+          <aside className="w-full lg:w-[320px] xl:w-[360px] 2xl:w-[380px] shrink-0 lg:sticky lg:top-20 space-y-8">
             {sidebarLatest.length > 0 && (
               <div>
                 <h3 className="font-display text-lg text-primary mb-4">Latest Articles</h3>
-                <div className="space-y-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-1 gap-3">
                   {sidebarLatest.map((a) => (
                     <SidebarItem key={a.id} article={a} />
                   ))}
@@ -339,7 +346,7 @@ export function ArticlePage() {
             {sidebarPicks.length > 0 && (
               <div>
                 <h3 className="font-display text-lg text-primary mb-4">Author's Picks</h3>
-                <div className="space-y-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-1 gap-3">
                   {sidebarPicks.map((a) => (
                     <SidebarItem key={a.id} article={a} />
                   ))}
@@ -355,14 +362,47 @@ export function ArticlePage() {
         <XPRewardAnimation xp={totalXp} onComplete={() => setShowXp(false)} />
       )}
 
-      {/* Completion Card */}
-      {showCompletionCard && (
-        <CompletionCard
-          username={profile?.display_name || user.email || 'Reader'}
-          articleTitle={article.title}
-          xpGained={totalXp}
-          xpBreakdown={xpBreakdown}
-        />
+      {/* Completion Card Popup Modal */}
+      {showCompletionModal && (
+        <div className="fixed inset-0 z-[350] flex items-center justify-center p-4">
+          <div
+            className="absolute inset-0 transition-opacity"
+            style={{ background: 'var(--modal-overlay)', backdropFilter: 'blur(10px)' }}
+            onClick={() => setShowCompletionModal(false)}
+          />
+          <div className="relative z-10 w-full max-w-lg">
+            <CompletionCard
+              cardType="completion"
+              username={profile?.display_name || user?.email || 'Reader'}
+              articleTitle={article.title}
+              articleId={id}
+              xpGained={completionCardXp}
+              onClose={() => setShowCompletionModal(false)}
+            />
+          </div>
+        </div>
+      )}
+
+      {/* Opinion Sharable Card Popup Modal */}
+      {opinionModalData && (
+        <div className="fixed inset-0 z-[350] flex items-center justify-center p-4">
+          <div
+            className="absolute inset-0 transition-opacity"
+            style={{ background: 'var(--modal-overlay)', backdropFilter: 'blur(10px)' }}
+            onClick={() => setOpinionModalData(null)}
+          />
+          <div className="relative z-10 w-full max-w-lg animate-scale-in">
+            <CompletionCard
+              cardType="opinion"
+              username={profile?.display_name || user?.email || 'Reader'}
+              articleTitle={article.title}
+              articleId={id}
+              xpGained={opinionModalData.xpGained}
+              opinionText={opinionModalData.opinionText}
+              onClose={() => setOpinionModalData(null)}
+            />
+          </div>
+        </div>
       )}
 
       {/* Level Up Modal */}

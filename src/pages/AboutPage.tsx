@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Mail, Phone, Building2, MessageSquare, Send } from 'lucide-react';
+import { Building2, MessageSquare } from 'lucide-react';
 import type { TeamMember } from '@/types';
 import { fetchTeamMembers, submitBusinessEnquiry, submitFeedback } from '@/lib/api';
 import { Input, Textarea } from '@/components/ui/Input';
