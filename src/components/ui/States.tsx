@@ -86,19 +86,14 @@ export function Modal({
 }) {
   if (!isOpen) return null;
   return (
-    <div className="fixed inset-0 z-[150] overflow-y-auto">
+    <div className="fixed inset-0 z-[150] flex items-center justify-center p-4">
       <div
         className="absolute inset-0"
         style={{ background: 'var(--modal-overlay)', backdropFilter: 'blur(8px)' }}
         onClick={onClose}
       />
-      <div className="relative min-h-full flex items-center justify-center p-4">
-        <div
-          className="relative glass-card p-8 max-w-lg w-full my-4 max-h-[calc(100vh-2rem)] overflow-y-auto animate-scale-in"
-          style={{ background: 'var(--modal-bg)' }}
-        >
-          {children}
-        </div>
+      <div className="relative glass-card p-8 max-w-lg w-full animate-scale-in" style={{ background: 'var(--modal-bg)' }}>
+        {children}
       </div>
     </div>
   );
