@@ -375,20 +375,10 @@ export async function deleteComment(commentId: string, _userId: string): Promise
 
 export async function fetchProfile(userId?: string): Promise<UserProfile | null> {
   await delay(50);
-  if (userId === 'admin-mock-user-id' || _profile.email === 'admin@modernstories.com') {
-    return {
-      id: 'admin-mock-user-id',
-      email: 'admin@modernstories.com',
-      display_name: 'Editorial Admin',
-      avatar_url: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=200&auto=format&fit=crop',
-      xp: 3500,
-      level: 6,
-      bio: 'Lead Editorial Director & Superadmin at The Modern Stories.',
-      ..._profile,
-      ...(userId === 'admin-mock-user-id' ? { id: 'admin-mock-user-id', email: 'admin@modernstories.com' } : {}),
-    };
+  if (userId && _profile.id === userId) {
+    return { ..._profile };
   }
-  return { ..._profile };
+  return { ..._profile, ...(userId ? { id: userId } : {}) };
 }
 
 export async function updateProfile(_userId: string, updates: Partial<UserProfile>): Promise<void> {

@@ -5,7 +5,7 @@ import { fetchProfile } from './api';
 import { DEFAULT_PROFILE } from './mock/data';
 import { supabase, isSupabaseConfigured } from './supabase';
 
-/* ---- Universal User type (compatible with Supabase User and Mock User) ---- */
+/* ---- Universal User type (compatible with Supabase User and standard User) ---- */
 export interface AppUser {
   id: string;
   email?: string;
@@ -19,40 +19,9 @@ export interface AppSession {
   access_token?: string;
 }
 
-export const ADMIN_PROFILE: UserProfile = {
-  id: 'admin-mock-user-id',
-  email: 'admin@modernstories.com',
-  display_name: 'Editorial Admin',
-  avatar_url: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=200&auto=format&fit=crop',
-  xp: 3500,
-  level: 6,
-  bio: 'Lead Editorial Director & Superadmin at The Modern Stories.',
-};
+const STORAGE_KEY = 'tms_auth_session';
 
-export const ADMIN_USER: AppUser = {
-  id: 'admin-mock-user-id',
-  email: 'admin@modernstories.com',
-  user_metadata: {
-    full_name: 'Editorial Admin',
-    role: 'admin',
-  },
-  app_metadata: {
-    role: 'admin',
-  },
-};
-
-export const READER_USER: AppUser = {
-  id: DEFAULT_PROFILE.id,
-  email: DEFAULT_PROFILE.email,
-  user_metadata: {
-    full_name: DEFAULT_PROFILE.display_name,
-    role: 'reader',
-  },
-};
-
-const STORAGE_KEY = 'tms_mock_session';
-
-function loadMockSession(): AppSession | null {
+function loadStoredSession(): AppSession | null {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
     return raw ? JSON.parse(raw) : null;
@@ -61,7 +30,7 @@ function loadMockSession(): AppSession | null {
   }
 }
 
-function saveMockSession(session: AppSession | null) {
+function saveStoredSession(session: AppSession | null) {
   if (session) {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(session));
   } else {
@@ -128,20 +97,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             .catch(() => setProfile(mapUserToProfile(currentSession.user as AppUser)))
             .finally(() => setLoading(false));
         } else {
-          // Fallback to local demo session if active in localStorage
-          const saved = loadMockSession();
+          // Check local stored session
+          const saved = loadStoredSession();
           if (saved?.user) {
             setSession(saved);
             setUser(saved.user);
-            if (saved.user.email?.toLowerCase() === 'admin@modernstories.com') {
-              setProfile(ADMIN_PROFILE);
-              setLoading(false);
-            } else {
-              fetchProfile(saved.user.id)
-                .then((p) => setProfile(p || mapUserToProfile(saved.user)))
-                .catch(() => setProfile(mapUserToProfile(saved.user)))
-                .finally(() => setLoading(false));
-            }
+            fetchProfile(saved.user.id)
+              .then((p) => setProfile(p || mapUserToProfile(saved.user)))
+              .catch(() => setProfile(mapUserToProfile(saved.user)))
+              .finally(() => setLoading(false));
           } else {
             setLoading(false);
           }
@@ -163,7 +127,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           }
           setLoading(false);
         } else {
-          const saved = loadMockSession();
+          const saved = loadStoredSession();
           if (!saved?.user) {
             setSession(null);
             setUser(null);
@@ -177,90 +141,51 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         subscription.unsubscribe();
       };
     } else {
-      // Fallback to local session when Supabase keys are not set in .env
-      const saved = loadMockSession();
+      // Load stored session if exists
+      const saved = loadStoredSession();
       if (saved?.user) {
         setSession(saved);
         setUser(saved.user);
-        if (saved.user.email?.toLowerCase() === 'admin@modernstories.com') {
-          setProfile(ADMIN_PROFILE);
-          setLoading(false);
-        } else {
-          fetchProfile(saved.user.id)
-            .then((p) => setProfile(p || mapUserToProfile(saved.user)))
-            .catch(() => setProfile(mapUserToProfile(saved.user)))
-            .finally(() => setLoading(false));
-        }
+        fetchProfile(saved.user.id)
+          .then((p) => setProfile(p || mapUserToProfile(saved.user)))
+          .catch(() => setProfile(mapUserToProfile(saved.user)))
+          .finally(() => setLoading(false));
       } else {
         setLoading(false);
       }
     }
   }, [isConfigured]);
 
-  const applyMockSession = async (mockUser: AppUser, customProfile?: UserProfile) => {
-    const sess: AppSession = { user: mockUser };
-    saveMockSession(sess);
+  const applyLocalSession = async (localUser: AppUser, customProfile?: UserProfile) => {
+    const sess: AppSession = { user: localUser };
+    saveStoredSession(sess);
     setSession(sess);
-    setUser(mockUser);
+    setUser(localUser);
     if (customProfile) {
       setProfile(customProfile);
       return;
     }
     try {
-      const p = await fetchProfile(mockUser.id);
-      setProfile(p || mapUserToProfile(mockUser));
+      const p = await fetchProfile(localUser.id);
+      setProfile(p || mapUserToProfile(localUser));
     } catch {
-      setProfile(mapUserToProfile(mockUser));
+      setProfile(mapUserToProfile(localUser));
     }
   };
 
   const signIn = async (email: string, password: string) => {
-    const cleanEmail = email.trim().toLowerCase();
-    const isDemoAdmin = cleanEmail === 'admin@modernstories.com';
-    const isDemoReader = cleanEmail === 'demo@modernstories.com';
-
-    // 1. Admin Demo Account: instant guaranteed sign in with full Superadmin access
-    if (isDemoAdmin) {
-      if (isConfigured && supabase) {
-        try {
-          const { data, error } = await supabase.auth.signInWithPassword({ email, password });
-          if (!error && data.user) {
-            setUser(data.user);
-            setSession(data.session);
-            setProfile(ADMIN_PROFILE);
-            return;
-          }
-        } catch {
-          // Seamless fallback for local admin demo credentials
-        }
-      }
-      await applyMockSession(ADMIN_USER, ADMIN_PROFILE);
-      return;
+    const cleanEmail = email.trim();
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(cleanEmail)) {
+      throw new Error('Please enter a valid email address.');
+    }
+    if (!password || password.length < 6) {
+      throw new Error('Password must be at least 6 characters.');
     }
 
-    // 2. Reader Demo Account: instant guaranteed sign in with reader demo profile
-    if (isDemoReader) {
-      if (isConfigured && supabase) {
-        try {
-          const { data, error } = await supabase.auth.signInWithPassword({ email, password });
-          if (!error && data.user) {
-            setUser(data.user);
-            setSession(data.session);
-            setProfile(mapUserToProfile(data.user as AppUser));
-            return;
-          }
-        } catch {
-          // Seamless fallback for local reader demo credentials
-        }
-      }
-      await applyMockSession(READER_USER, DEFAULT_PROFILE);
-      return;
-    }
-
-    // 3. Regular account: authenticate against Supabase or fallback to local user
     if (isConfigured && supabase) {
       const { data, error } = await supabase.auth.signInWithPassword({
-        email,
+        email: cleanEmail,
         password,
       });
       if (error) throw error;
@@ -270,32 +195,30 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setProfile(mapUserToProfile(data.user as AppUser));
       }
     } else {
-      const customUser: AppUser = {
-        id: `local-user-${Date.now()}`,
-        email,
+      const localUser: AppUser = {
+        id: `user-${cleanEmail.replace(/[^a-zA-Z0-9]/g, '_')}`,
+        email: cleanEmail,
+        user_metadata: {
+          full_name: cleanEmail.split('@')[0],
+        },
       };
-      await applyMockSession(customUser);
+      await applyLocalSession(localUser);
     }
   };
 
   const signUp = async (email: string, password: string) => {
-    const cleanEmail = email.trim().toLowerCase();
-    const isDemoAdmin = cleanEmail === 'admin@modernstories.com';
-    const isDemoReader = cleanEmail === 'demo@modernstories.com';
-
-    if (isDemoAdmin) {
-      await applyMockSession(ADMIN_USER, ADMIN_PROFILE);
-      return;
+    const cleanEmail = email.trim();
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(cleanEmail)) {
+      throw new Error('Please enter a valid email address.');
     }
-
-    if (isDemoReader) {
-      await applyMockSession(READER_USER, DEFAULT_PROFILE);
-      return;
+    if (!password || password.length < 6) {
+      throw new Error('Password must be at least 6 characters.');
     }
 
     if (isConfigured && supabase) {
       const { data, error } = await supabase.auth.signUp({
-        email,
+        email: cleanEmail,
         password,
         options: {
           emailRedirectTo: `${window.location.origin}/`,
@@ -308,11 +231,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setProfile(mapUserToProfile(data.user as AppUser));
       }
     } else {
-      const customUser: AppUser = {
-        id: `local-user-${Date.now()}`,
-        email,
+      const localUser: AppUser = {
+        id: `user-${cleanEmail.replace(/[^a-zA-Z0-9]/g, '_')}`,
+        email: cleanEmail,
+        user_metadata: {
+          full_name: cleanEmail.split('@')[0],
+        },
       };
-      await applyMockSession(customUser);
+      await applyLocalSession(localUser);
     }
   };
 
@@ -330,15 +256,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       });
       if (error) throw error;
     } else {
-      // Fallback mock Google authentication when running without Supabase credentials
-      await applyMockSession({
-        id: DEFAULT_PROFILE.id,
-        email: DEFAULT_PROFILE.email,
-        user_metadata: {
-          full_name: DEFAULT_PROFILE.display_name,
-          avatar_url: DEFAULT_PROFILE.avatar_url,
-        },
-      });
+      throw new Error('Supabase is not configured yet. Please configure VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY to enable Google Authentication.');
     }
   };
 
@@ -347,7 +265,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const { error } = await supabase.auth.signOut();
       if (error) throw error;
     }
-    saveMockSession(null);
+    saveStoredSession(null);
     setSession(null);
     setUser(null);
     setProfile(null);

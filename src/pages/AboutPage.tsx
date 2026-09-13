@@ -1,21 +1,47 @@
-import { useEffect, useState } from 'react';
-import type { TeamMember } from '@/types';
-import { fetchTeamMembers } from '@/lib/api';
-import { LoadingState, ErrorState } from '@/components/ui/States';
 import { ContactSection } from '@/components/common/ContactSection';
+import { GlowingEffect } from '@/components/articles/GlowingEffect';
+
+// Final Meet the Team content (image URLs can be updated here when new images are ready)
+interface TeamMemberItem {
+  id: string;
+  name: string;
+  role: string;
+  bio: string;
+  image_url: string;
+}
+
+const TEAM_MEMBERS: TeamMemberItem[] = [
+  {
+    id: 'tm-1',
+    name: 'Tolety Mohana Shyam',
+    role: 'Founder',
+    bio: 'At The Modern Stories, we look past the obvious to bring you the conversations that truly matter. Step beyond the bias, think critically, and see the world from a different lens.',
+    image_url: 'https://images.pexels.com/photos/2379004/pexels-photo-2379004.jpeg?auto=compress&cs=tinysrgb&w=400',
+  },
+  {
+    id: 'tm-2',
+    name: 'Chinta Suguna Vanditha',
+    role: 'Content Writer',
+    bio: 'The Modern Stories explores the overlooked narratives of our world with honesty and nuance. Rather than telling you what to think, it invites you to look closer and see every story differently.',
+    image_url: 'https://images.pexels.com/photos/3796217/pexels-photo-3796217.jpeg?auto=compress&cs=tinysrgb&w=400',
+  },
+  {
+    id: 'tm-3',
+    name: 'Sree Keerthana Gorty',
+    role: 'Sr. Business Analyst',
+    bio: 'A go to platform for modern ideas in modern platform having modern people!',
+    image_url: 'https://images.pexels.com/photos/3764119/pexels-photo-3764119.jpeg?auto=compress&cs=tinysrgb&w=400',
+  },
+  {
+    id: 'tm-4',
+    name: 'Indira Pagadala',
+    role: 'AI-ML Engineer',
+    bio: "Built with thoughtful journalism in mind, The Modern Stories is the perfect way to stay updated in today's world",
+    image_url: 'https://images.pexels.com/photos/5386785/pexels-photo-5386785.jpeg?auto=compress&cs=tinysrgb&w=400',
+  },
+];
 
 export function AboutPage() {
-  const [team, setTeam] = useState<TeamMember[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(false);
-
-  useEffect(() => {
-    fetchTeamMembers()
-      .then(setTeam)
-      .catch(() => setError(true))
-      .finally(() => setLoading(false));
-  }, []);
-
   return (
     <div className="relative z-10 max-w-7xl mx-auto px-4 md:px-8 py-12 space-y-24">
       {/* About The Modern Stories */}
@@ -148,48 +174,28 @@ export function AboutPage() {
       {/* Meet the Team */}
       <section>
         <h2 className="font-display text-3xl text-primary text-center mb-10">Meet the Team</h2>
-        {loading ? (
-          <LoadingState message="Loading team..." />
-        ) : error ? (
-          <ErrorState message="Could not load team members." />
-        ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            {team.map((member) => (
-              <div key={member.id} className="glass-card overflow-hidden group">
-                <div className="relative h-64 overflow-hidden">
-                  {member.image_url && (
-                    <img
-                      src={member.image_url}
-                      alt={member.name}
-                      className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-                      loading="lazy"
-                    />
-                  )}
-                </div>
-                <div className="p-5">
-                  <h3 className="font-display text-lg text-primary">{member.name}</h3>
-                  <p className="text-sm text-brand-primary mb-2 font-medium">{member.role}</p>
-                  <p className="text-xs text-muted leading-relaxed">{member.bio}</p>
-                  {member.social_links?.length > 0 && (
-                    <div className="flex gap-2 mt-3">
-                      {member.social_links.map((link, i) => (
-                        <a
-                          key={i}
-                          href={link.url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-xs text-muted hover:text-brand-primary transition-colors"
-                        >
-                          {link.label}
-                        </a>
-                      ))}
-                    </div>
-                  )}
-                </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+          {TEAM_MEMBERS.map((member) => (
+            <div key={member.id} className="relative glass-card overflow-hidden group flex flex-col h-full">
+              <GlowingEffect borderWidth={1.5} spread={40} glow={true} />
+              <div className="relative h-64 overflow-hidden bg-surface-secondary">
+                {member.image_url && (
+                  <img
+                    src={member.image_url}
+                    alt={member.name}
+                    className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                    loading="lazy"
+                  />
+                )}
               </div>
-            ))}
-          </div>
-        )}
+              <div className="p-5 flex flex-col flex-1">
+                <h3 className="font-display text-lg text-primary">{member.name}</h3>
+                <p className="text-sm text-brand-primary mb-2 font-medium">{member.role}</p>
+                <p className="text-xs text-muted leading-relaxed flex-1">{member.bio}</p>
+              </div>
+            </div>
+          ))}
+        </div>
       </section>
 
       {/* Contact */}

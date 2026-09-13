@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Navigate } from 'react-router-dom';
 import {
   BookOpen, Trophy, Target, MessageSquare, Award, Share2,
   Clock, TrendingUp, CheckCircle2, Lock, ChevronRight, Settings,
@@ -22,7 +22,6 @@ import type {
 } from '@/types';
 
 export function ProfilePage() {
-  const navigate = useNavigate();
   const { user, profile, loading } = useAuth();
 
   if (loading) {
@@ -34,8 +33,7 @@ export function ProfilePage() {
   }
 
   if (!user || !profile) {
-    navigate('/auth', { state: { redirect: '/profile' } });
-    return null;
+    return <Navigate to="/auth" state={{ redirect: '/profile' }} replace />;
   }
 
   return (

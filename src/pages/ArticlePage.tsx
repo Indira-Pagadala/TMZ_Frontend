@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useNavigate, useParams, Navigate } from 'react-router-dom';
 import { ArrowLeft, Home, Layers, User } from 'lucide-react';
 import type { ArticleWithBlocks, Level, Badge, Article } from '@/types';
 import { useAuth } from '@/lib/auth';
@@ -334,7 +334,7 @@ export function ArticlePage() {
 
   if (loading) return <LoadingState message="Loading article..." />;
   if (error || !article) return <ErrorState message="Article not found." onRetry={() => navigate('/')} />;
-  if (!user) { navigate('/auth', { state: { redirect: `/article/${id}` } }); return null; }
+  if (!user) return <Navigate to="/auth" state={{ redirect: `/article/${id}` }} replace />;
 
   const typeLabel = article.article_type === 'PODCAST' ? 'Podcast'
     : article.article_type === 'QUIZ' ? 'Quiz'

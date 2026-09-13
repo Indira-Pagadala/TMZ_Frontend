@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useNavigate, useParams, Navigate } from 'react-router-dom';
 import {
   ArrowLeft, CheckCircle2, Award, Trophy, Share2, MessageSquare,
   BookOpen, Target, Lock, Sparkles,
@@ -38,7 +38,7 @@ export function ProfileListPage() {
   const { user, loading: authLoading } = useAuth();
 
   if (authLoading) return <LoadingState message="Loading..." />;
-  if (!user) { navigate('/auth', { state: { redirect: `/profile/${type}` } }); return null; }
+  if (!user) return <Navigate to="/auth" state={{ redirect: `/profile/${type}` }} replace />;
 
   const listType = type as ListType;
   if (!META[listType]) return <ErrorState message="Page not found." onRetry={() => navigate('/profile')} />;

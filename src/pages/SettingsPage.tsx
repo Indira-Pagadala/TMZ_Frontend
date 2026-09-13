@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Navigate } from 'react-router-dom';
 import {
   Settings as SettingsIcon, User, Palette, LogOut,
   Sun, Moon, Upload, Check, AlertCircle, ArrowLeft, Loader2,
@@ -25,8 +25,7 @@ export function SettingsPage() {
   }
 
   if (!user || !profile) {
-    navigate('/auth', { state: { redirect: '/settings' } });
-    return null;
+    return <Navigate to="/auth" state={{ redirect: '/settings' }} replace />;
   }
 
   return (

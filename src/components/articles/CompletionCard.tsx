@@ -1,7 +1,9 @@
 import React, { useState } from 'react';
-import { Share2, Copy, X, Quote, Check } from 'lucide-react';
+import { useNavigate, useLocation } from 'react-router-dom';
+import { Share2, Copy, X, Quote, Check, ExternalLink } from 'lucide-react';
 import { useToast } from '@/lib/toast';
 import { TMSLogo } from '@/components/brand/TMSLogo';
+import { buildCardShareUrl, buildCardRelativePath } from '@/lib/cardShare';
 
 export interface CompletionCardProps {
   username: string;
@@ -26,12 +28,24 @@ export function CompletionCard({
   onClose,
   interactive = true,
 }: CompletionCardProps) {
+  const navigate = useNavigate();
+  const location = useLocation();
   const { showToast } = useToast();
   const [copied, setCopied] = useState(false);
   const [tilt, setTilt] = useState({ x: 0, y: 0 });
   const [isHovered, setIsHovered] = useState(false);
 
   const isOpinionCard = cardType === 'opinion';
+  const isAlreadyOnCardPage = location.pathname === '/card';
+
+  const cardPayload = {
+    username,
+    articleTitle,
+    articleId,
+    xpGained,
+    cardType,
+    opinionText,
+  };
 
   const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
     if (!interactive) return;
@@ -58,10 +72,11 @@ export function CompletionCard({
   };
 
   const getShareUrl = () => {
-    if (articleId) {
-      return `${window.location.origin}/article/${articleId}`;
-    }
-    return window.location.href;
+    return buildCardShareUrl(cardPayload);
+  };
+
+  const getRelativePath = () => {
+    return buildCardRelativePath(cardPayload);
   };
 
   const handleShare = async () => {
@@ -84,7 +99,7 @@ export function CompletionCard({
       try {
         await navigator.clipboard.writeText(`${shareText}\n${shareUrl}`);
         setCopied(true);
-        showToast('Link and text copied to clipboard!', 'success');
+        showToast('Card link copied to clipboard!', 'success');
         setTimeout(() => setCopied(false), 2500);
       } catch {
         showToast('Could not copy to clipboard', 'error');
@@ -94,14 +109,10 @@ export function CompletionCard({
 
   const handleCopy = async () => {
     const shareUrl = getShareUrl();
-    const shareText = isOpinionCard
-      ? `${username} voiced their opinion on "${articleTitle}": "${opinionText || ''}" — ${shareUrl}`
-      : `${username} completed reading "${articleTitle}" (+${xpGained} XP) — ${shareUrl}`;
-
     try {
-      await navigator.clipboard.writeText(shareText);
+      await navigator.clipboard.writeText(shareUrl);
       setCopied(true);
-      showToast('Copied to clipboard!', 'success');
+      showToast('Card link copied to clipboard!', 'success');
       setTimeout(() => setCopied(false), 2500);
     } catch {
       showToast('Could not copy to clipboard', 'error');
@@ -199,31 +210,49 @@ export function CompletionCard({
           )}
         </div>
 
-        {/* Footer: Share and Copy Link */}
-        <div className="flex items-center justify-center gap-3 mt-4 pt-6 border-t border-subtle">
-          <button
-            onClick={handleShare}
-            className="btn-primary text-sm px-6 py-2.5 flex items-center justify-center gap-2 rounded-xl transition-transform active:scale-95 shadow-sm"
-          >
-            <Share2 className="w-4 h-4" />
-            Share
-          </button>
-          <button
-            onClick={handleCopy}
-            className="btn-secondary text-sm px-6 py-2.5 flex items-center justify-center gap-2 rounded-xl transition-transform active:scale-95 border border-default"
-          >
-            {copied ? (
-              <>
-                <Check className="w-4 h-4 text-brand-secondary" />
-                <span className="text-brand-secondary font-medium">Copied!</span>
-              </>
-            ) : (
-              <>
-                <Copy className="w-4 h-4" />
-                <span>Copy Link</span>
-              </>
-            )}
-          </button>
+        {/* Footer: Share, Copy Link, and in-app Preview */}
+        <div className="flex flex-col items-center justify-center gap-3 mt-4 pt-6 border-t border-subtle">
+          <div className="flex items-center justify-center gap-3 w-full">
+            <button
+              type="button"
+              onClick={handleShare}
+              className="btn-primary text-sm px-6 py-2.5 flex-1 max-w-[140px] flex items-center justify-center gap-2 rounded-xl transition-transform active:scale-95 shadow-sm cursor-pointer"
+            >
+              <Share2 className="w-4 h-4" />
+              <span>Share</span>
+            </button>
+            <button
+              type="button"
+              onClick={handleCopy}
+              className="btn-secondary text-sm px-6 py-2.5 flex-1 max-w-[140px] flex items-center justify-center gap-2 rounded-xl transition-transform active:scale-95 border border-default cursor-pointer"
+            >
+              {copied ? (
+                <>
+                  <Check className="w-4 h-4 text-brand-secondary" />
+                  <span className="text-brand-secondary font-medium">Copied!</span>
+                </>
+              ) : (
+                <>
+                  <Copy className="w-4 h-4" />
+                  <span>Copy Link</span>
+                </>
+              )}
+            </button>
+          </div>
+
+          {!isAlreadyOnCardPage && (
+            <button
+              type="button"
+              onClick={() => {
+                if (onClose) onClose();
+                navigate(getRelativePath());
+              }}
+              className="inline-flex items-center gap-1.5 text-xs text-muted hover:text-primary transition-colors mt-0.5 group cursor-pointer"
+            >
+              <span>View card page</span>
+              <ExternalLink className="w-3 h-3 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
+            </button>
+          )}
         </div>
       </div>
     </div>

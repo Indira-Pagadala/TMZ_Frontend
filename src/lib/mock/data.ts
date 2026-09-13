@@ -336,9 +336,9 @@ export const TEAM_MEMBERS: TeamMember[] = [
 /* ===================== MOCK USER DATA (per session) ===================== */
 
 export const DEFAULT_PROFILE: UserProfile = {
-  id: 'mock-user-id',
-  email: 'demo@modernstories.com',
-  display_name: 'Demo Reader',
+  id: 'user-default-id',
+  email: 'reader@modernstories.com',
+  display_name: 'TMS Reader',
   avatar_url: null,
   xp: 145,
   level: 2,
