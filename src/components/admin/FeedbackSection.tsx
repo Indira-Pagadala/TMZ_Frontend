@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
-import { MessageSquare, CheckCircle2, RotateCcw, Loader2, ChevronLeft, ChevronRight } from 'lucide-react';
+import { MessageSquare, Loader2, ChevronLeft, ChevronRight } from 'lucide-react';
 import type { FeedbackItem } from '@/lib/admin/adminTypes';
-import { fetchFeedback, updateFeedbackStatus } from '@/lib/admin/api';
+import { fetchFeedback } from '@/lib/admin/api';
 import { useToast } from '@/lib/toast';
 import { GlassCard } from '@/components/ui/GlassCard';
 import { Button } from '@/components/ui/Button';
@@ -20,7 +20,6 @@ export function FeedbackSection(): JSX.Element {
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(true);
-  const [updating, setUpdating] = useState<string | null>(null);
 
   const load = useCallback(async (p: number) => {
     setLoading(true);

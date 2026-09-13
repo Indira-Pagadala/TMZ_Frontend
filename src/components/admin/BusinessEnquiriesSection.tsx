@@ -1,9 +1,9 @@
 import { useCallback, useEffect, useState } from 'react';
 import {
-  Briefcase, CheckCircle2, RotateCcw, Loader2, ChevronLeft, ChevronRight,
+  Briefcase, Loader2, ChevronLeft, ChevronRight,
 } from 'lucide-react';
 import type { BusinessEnquiry } from '@/lib/admin/adminTypes';
-import { fetchBusinessEnquiries, updateEnquiryStatus } from '@/lib/admin/api';
+import { fetchBusinessEnquiries } from '@/lib/admin/api';
 import { useToast } from '@/lib/toast';
 import { GlassCard } from '@/components/ui/GlassCard';
 import { Button } from '@/components/ui/Button';

@@ -40,8 +40,6 @@ export const mockCategories: AdminCategory[] = [
   { id: 'cat-4', name: 'Business', slug: 'business', description: 'Business and finance insights', image_url: null, article_count: 6, created_at: '2026-08-01T10:00:00Z' },
 ];
 
-const randomId = (prefix: string) => `${prefix}-${Math.random().toString(16).slice(2, 10)}`;
-
 export const mockArticles: AdminArticle[] = [
   {
     id: 'a83f1e62-2c61-4d92-9c18-0e6a3f92cd12', title: 'The Future of Quantum Computing', subtitle: 'How quantum processors will reshape everything',

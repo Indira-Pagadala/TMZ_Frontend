@@ -372,8 +372,8 @@ function ArticleEditor({
   const [articleType, setArticleType] = useState(article?.article_type ?? 'ARTICLE');
   const [isAuthorsPick, setIsAuthorsPick] = useState(article?.is_authors_pick ?? false);
   const [coverImage, setCoverImage] = useState(article?.cover_image_url ?? '');
-  const [articleId, setArticleId] = useState(article?.id ?? crypto.randomUUID());
-  const [status, setStatus] = useState<ArticleStatus>(article?.status ?? 'DRAFT');
+  const [articleId] = useState(article?.id ?? crypto.randomUUID());
+  const [status] = useState<ArticleStatus>(article?.status ?? 'DRAFT');
   const [blocks, setBlocks] = useState<EditorBlock[]>([]);
   const [showBlockPicker, setShowBlockPicker] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);

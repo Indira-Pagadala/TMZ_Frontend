@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import {
   BookOpen, Trophy, Target, MessageSquare, Award, Share2,
   Clock, TrendingUp, CheckCircle2, Lock, ChevronRight, Settings,
-  Zap, Star, BarChart3,
+  Zap, Star, BarChart3, Sparkles,
 } from 'lucide-react';
 import { useAuth } from '@/lib/auth';
 import { useToast } from '@/lib/toast';
@@ -291,23 +291,33 @@ function ProfileOverview() {
         {completionCards.length === 0 ? (
           <EmptyStateCard icon={Share2} message="No shareable cards yet. Complete an article or share your opinion to earn one." />
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             {completionCards.slice(0, 4).map((card) => (
-              <div
+              <button
                 key={card.id}
                 onClick={() => setSelectedCard(card)}
-                className="cursor-pointer transition-transform hover:-translate-y-1"
+                className="text-left group cursor-pointer focus:outline-none w-full"
               >
-                <CompletionCardComponent
-                  cardType={card.card_type ?? 'completion'}
-                  username={profile?.display_name ?? 'Reader'}
-                  articleTitle={card.article_title}
-                  articleId={card.article_id}
-                  xpGained={card.xp_gained}
-                  opinionText={card.opinion_text}
-                  interactive={true}
-                />
-              </div>
+                <GlassCard className="p-3 sm:p-4 h-full flex flex-col justify-between transition-all duration-200 hover:-translate-y-1 hover:border-brand-primary/40">
+                  <div
+                    className="aspect-[3/4] w-full rounded-xl sm:rounded-2xl mb-2.5 sm:mb-3 flex flex-col items-center justify-center p-3 sm:p-4 text-center transition-transform group-hover:scale-[1.02] shadow-md"
+                    style={{
+                      background: 'linear-gradient(150deg, #0077b6 0%, #023e8a 55%, #03045e 100%)',
+                    }}
+                  >
+                    <Sparkles className="w-7 h-7 sm:w-8 sm:h-8 text-white mb-2 sm:mb-3 drop-shadow-sm" />
+                    <p className="text-white font-display font-semibold text-xs sm:text-sm leading-snug line-clamp-3 mb-1.5 sm:mb-2">
+                      {card.article_title}
+                    </p>
+                    <p className="text-white/80 font-display text-xs font-medium">
+                      +{card.xp_gained} XP
+                    </p>
+                  </div>
+                  <p className="text-xs text-muted text-center font-body group-hover:text-primary transition-colors">
+                    Tap to view & share
+                  </p>
+                </GlassCard>
+              </button>
             ))}
           </div>
         )}

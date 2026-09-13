@@ -13,6 +13,7 @@ import { SectionHeader, LoadingState, ErrorState } from '@/components/ui/States'
 import { BookmarkButton } from '@/components/articles/BookmarkButton';
 import { GlowingEffect } from '@/components/articles/GlowingEffect';
 import { useAuth } from '@/lib/auth';
+import { ContactSection } from '@/components/common/ContactSection';
 
 export function HomePage() {
   const navigate = useNavigate();
@@ -132,6 +133,9 @@ export function HomePage() {
           onArticleClick={handleArticleClick}
         />
       ))}
+
+      {/* 7. CONTACT — Business Enquiry & Feedback Forms */}
+      <ContactSection />
     </div>
   );
 }
