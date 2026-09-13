@@ -60,7 +60,7 @@ export function SectionHeader({
   onAction?: () => void;
 }) {
   return (
-    <div className="flex items-center justify-between mb-6">
+    <div className="flex items-center justify-between mb-3.5 sm:mb-4">
       <h2 className="font-display text-2xl md:text-3xl text-primary">{title}</h2>
       {action && (
         <button
@@ -79,21 +79,35 @@ export function Modal({
   children,
   isOpen,
   onClose,
+  maxWidth = 'max-w-xl',
 }: {
   children: ReactNode;
   isOpen: boolean;
   onClose: () => void;
+  maxWidth?: string;
 }) {
   if (!isOpen) return null;
   return (
-    <div className="fixed inset-0 z-[150] flex items-center justify-center p-4">
+    <div className="fixed inset-0 z-[200] flex items-center justify-center p-3 sm:p-4 md:p-6 overflow-hidden">
       <div
-        className="absolute inset-0"
-        style={{ background: 'var(--modal-overlay)', backdropFilter: 'blur(8px)' }}
+        className="fixed inset-0 transition-opacity duration-300"
+        style={{ background: 'var(--modal-overlay)', backdropFilter: 'blur(8px)', WebkitBackdropFilter: 'blur(8px)' }}
         onClick={onClose}
+        aria-hidden="true"
       />
-      <div className="relative glass-card p-8 max-w-lg w-full animate-scale-in" style={{ background: 'var(--modal-bg)' }}>
-        {children}
+      <div
+        className={`relative glass-card my-auto w-full ${maxWidth} max-h-[85vh] sm:max-h-[82vh] flex flex-col rounded-2xl animate-scale-in shadow-2xl overflow-hidden border`}
+        style={{
+          background: 'var(--modal-bg)',
+          borderColor: 'var(--border-default)',
+          boxShadow: 'var(--shadow-elevated)',
+        }}
+        role="dialog"
+        aria-modal="true"
+      >
+        <div className="p-5 sm:p-6 md:p-7 overflow-y-auto custom-scrollbar flex-1">
+          {children}
+        </div>
       </div>
     </div>
   );

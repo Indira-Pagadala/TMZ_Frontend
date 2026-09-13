@@ -77,6 +77,70 @@ export async function fetchCategoryBySlug(slug: string): Promise<Category | null
   return CATEGORIES.find((c) => c.slug === slug) ?? null;
 }
 
+/* ===================== HERO BANNER CONFIG ===================== */
+
+export interface HeroConfig {
+  imageUrl: string;
+  title: string;
+  subtitle: string;
+  badgeText: string;
+  linkText: string;
+  linkUrl: string;
+}
+
+export const DEFAULT_HERO_CONFIG: HeroConfig = {
+  imageUrl: '/modern_stories_hero.jpg',
+  title: 'Human stories & modern ideas',
+  subtitle: 'A sanctuary to read, write, and deepen your understanding across technology, science, culture, and human ingenuity.',
+  badgeText: 'The Modern Stories • Curated Editorial',
+  linkText: 'Know more',
+  linkUrl: '/about',
+};
+
+const HERO_CONFIG_KEY = 'tms_hero_banner_config';
+
+export function getStoredHeroConfig(): HeroConfig {
+  try {
+    const raw = localStorage.getItem(HERO_CONFIG_KEY);
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (parsed && typeof parsed.imageUrl === 'string') {
+        const isLegacyUnsplash =
+          parsed.imageUrl.includes('photo-1499750310107-5fef28a66643') ||
+          parsed.imageUrl.includes('photo-1513694203232-719a280e022f');
+        return {
+          ...DEFAULT_HERO_CONFIG,
+          ...parsed,
+          imageUrl: isLegacyUnsplash ? DEFAULT_HERO_CONFIG.imageUrl : parsed.imageUrl,
+        };
+      }
+    }
+  } catch {
+    /* ignore */
+  }
+  return { ...DEFAULT_HERO_CONFIG };
+}
+
+export function saveStoredHeroConfig(config: Partial<HeroConfig>): HeroConfig {
+  const current = getStoredHeroConfig();
+  const updated: HeroConfig = {
+    ...current,
+    ...config,
+  };
+  try {
+    localStorage.setItem(HERO_CONFIG_KEY, JSON.stringify(updated));
+    window.dispatchEvent(new CustomEvent('tms_hero_config_updated', { detail: updated }));
+  } catch {
+    /* ignore */
+  }
+  return updated;
+}
+
+export async function fetchHeroConfig(): Promise<HeroConfig> {
+  await delay(50);
+  return getStoredHeroConfig();
+}
+
 /* ===================== PROMOTIONS ===================== */
 
 export async function fetchPromotions(): Promise<Promotion[]> {
@@ -86,24 +150,82 @@ export async function fetchPromotions(): Promise<Promotion[]> {
 
 /* ===================== ARTICLES ===================== */
 
+const AUTHORS_PICKS_KEY = 'tms_authors_picks_order';
+
+export function getStoredAuthorsPicksOrder(): string[] {
+  try {
+    const raw = localStorage.getItem(AUTHORS_PICKS_KEY);
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+    }
+  } catch {
+    /* ignore */
+  }
+  return [];
+}
+
+export function saveStoredAuthorsPicksOrder(orderedIds: string[]): void {
+  try {
+    localStorage.setItem(AUTHORS_PICKS_KEY, JSON.stringify(orderedIds));
+  } catch {
+    /* ignore */
+  }
+}
+
+/**
+ * Sorts articles by published date descending (latest posted first).
+ */
+export function sortArticlesByDate<T extends { published_at?: string | null; created_at?: string | null }>(articles: T[]): T[] {
+  return [...articles].sort((a, b) => {
+    const dateA = a.published_at || a.created_at;
+    const dateB = b.published_at || b.created_at;
+    const timeA = dateA ? new Date(dateA).getTime() : 0;
+    const timeB = dateB ? new Date(dateB).getTime() : 0;
+    return timeB - timeA;
+  });
+}
+
 export async function fetchLatestArticles(limit = 10): Promise<Article[]> {
   await delay();
-  return ARTICLES.slice(0, limit);
+  // Combined latest articles across ALL categories, sorted datewise (newest first)
+  const sorted = sortArticlesByDate(ARTICLES);
+  return sorted.slice(0, limit);
 }
 
 export async function fetchArticlesByCategory(categoryId: string): Promise<Article[]> {
   await delay();
-  return ARTICLES.filter((a) => a.category_id === categoryId);
+  // Category articles, sorted datewise (newest first)
+  const filtered = ARTICLES.filter((a) => a.category_id === categoryId);
+  return sortArticlesByDate(filtered);
 }
 
 export async function fetchAuthorsPicks(limit = 10): Promise<Article[]> {
   await delay();
-  return ARTICLES.filter((a) => a.is_authors_pick).slice(0, limit);
+  const order = getStoredAuthorsPicksOrder();
+  if (order.length > 0) {
+    const map = new Map(ARTICLES.map((a) => [a.id, a]));
+    const picked: Article[] = [];
+    for (const id of order) {
+      const art = map.get(id);
+      if (art) picked.push(art);
+    }
+    // Include any other articles with is_authors_pick true not in explicit order
+    for (const a of sortArticlesByDate(ARTICLES)) {
+      if (a.is_authors_pick && !order.includes(a.id)) {
+        picked.push(a);
+      }
+    }
+    return picked.slice(0, limit);
+  }
+  const picks = ARTICLES.filter((a) => a.is_authors_pick);
+  return sortArticlesByDate(picks).slice(0, limit);
 }
 
 export async function fetchFeaturedArticles(limit = 5): Promise<Article[]> {
   await delay();
-  return ARTICLES.filter((a) => a.is_featured).slice(0, limit);
+  const featured = ARTICLES.filter((a) => a.is_featured);
+  return sortArticlesByDate(featured).slice(0, limit);
 }
 
 export async function fetchArticleById(id: string): Promise<ArticleWithBlocks | null> {
@@ -251,8 +373,21 @@ export async function deleteComment(commentId: string, _userId: string): Promise
 
 /* ===================== USER PROFILE ===================== */
 
-export async function fetchProfile(_userId: string): Promise<UserProfile | null> {
+export async function fetchProfile(userId?: string): Promise<UserProfile | null> {
   await delay(50);
+  if (userId === 'admin-mock-user-id' || _profile.email === 'admin@modernstories.com') {
+    return {
+      id: 'admin-mock-user-id',
+      email: 'admin@modernstories.com',
+      display_name: 'Editorial Admin',
+      avatar_url: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=200&auto=format&fit=crop',
+      xp: 3500,
+      level: 6,
+      bio: 'Lead Editorial Director & Superadmin at The Modern Stories.',
+      ..._profile,
+      ...(userId === 'admin-mock-user-id' ? { id: 'admin-mock-user-id', email: 'admin@modernstories.com' } : {}),
+    };
+  }
   return { ..._profile };
 }
 

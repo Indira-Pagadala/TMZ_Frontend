@@ -4,6 +4,7 @@ import { AuthProvider } from '@/lib/auth';
 import { ToastProvider } from '@/lib/toast';
 import { DotPattern } from '@/components/layout/DotPattern';
 import { CursorFollower } from '@/components/layout/CursorFollower';
+import { ScrollToTop } from '@/components/layout/ScrollToTop';
 import { Header } from '@/components/layout/Header';
 import { Footer } from '@/components/layout/Footer';
 import { HomePage } from '@/pages/HomePage';
@@ -24,6 +25,7 @@ function App() {
       <AuthProvider>
         <ToastProvider>
           <BrowserRouter>
+            <ScrollToTop />
             <DotPattern />
             <CursorFollower />
             <div className="relative min-h-screen">

@@ -42,6 +42,14 @@ export const mockCategories: AdminCategory[] = [
 
 export const mockArticles: AdminArticle[] = [
   {
+    id: 'art-13', title: 'This is what happens when you dont eat', subtitle: 'The biochemical cascade of prolonged fasting: from glycogen depletion to autophagy and cellular repair',
+    summary: 'An exploration of human metabolism, ketogenesis, and cellular autophagy during prolonged fasting.',
+    category_id: 'cat-5', category_name: 'Health', article_type: 'OPINION',
+    status: 'PUBLISHED', cover_image_url: 'https://images.pexels.com/photos/1640777/pexels-photo-1640777.jpeg?auto=compress&cs=tinysrgb&w=800', author_name: 'Dr. Lena Vogel',
+    is_featured: true, is_authors_pick: true, reading_time_minutes: 6,
+    published_at: '2026-09-12T09:00:00Z', scheduled_at: null, created_at: '2026-09-12T08:00:00Z',
+  },
+  {
     id: 'a83f1e62-2c61-4d92-9c18-0e6a3f92cd12', title: 'The Future of Quantum Computing', subtitle: 'How quantum processors will reshape everything',
     summary: 'An in-depth look at quantum computing breakthroughs in 2026.',
     category_id: 'cat-1', category_name: 'Technology', article_type: 'ARTICLE',
@@ -132,6 +140,17 @@ export const mockQuizzes: AdminQuiz[] = [
 ];
 
 export const mockOpinions: AdminOpinion[] = [
+  {
+    id: 'op-fasting-1', article_id: 'art-13', article_title: 'This is what happens when you dont eat',
+    question: 'What is your opinion on intermittent and prolonged fasting protocols for human health and longevity?',
+    options: [
+      'A powerful evolutionary tool for metabolic health and cellular renewal',
+      'Effective for caloric control, but claims about longevity are overhyped',
+      'Potentially risky and unsustainable for most everyday lifestyles',
+      'Prefer regular balanced whole-food meals without rigid fasting windows',
+    ],
+    allow_custom_text: true,
+  },
   {
     id: 'op-1', article_id: '421f13d4-b8d0-4f2e-a5f5-7f0b5d762350', article_title: 'The Opinion Divide',
     question: 'Should climate policy prioritize economic growth or environmental protection?',

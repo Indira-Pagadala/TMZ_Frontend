@@ -28,8 +28,49 @@ import {
   mockAdvertisements, mockAdSlots, mockMedia, mockAnalytics, mockFeedback,
   mockBusinessEnquiries, mockAuditLogs,
 } from './mockData';
+import {
+  type HeroConfig,
+  DEFAULT_HERO_CONFIG,
+  getStoredHeroConfig,
+  saveStoredHeroConfig,
+} from '@/lib/api';
 
 const delay = (ms = 200) => new Promise((r) => setTimeout(r, ms));
+
+export { type HeroConfig, DEFAULT_HERO_CONFIG };
+
+export async function fetchAdminHeroConfig(): Promise<HeroConfig> {
+  await delay(50);
+  return getStoredHeroConfig();
+}
+
+export async function updateAdminHeroConfig(config: Partial<HeroConfig>): Promise<HeroConfig> {
+  await delay(100);
+  return saveStoredHeroConfig(config);
+}
+
+const AUTHORS_PICKS_KEY = 'tms_authors_picks_order';
+
+export function getAdminAuthorsPicksOrder(): string[] {
+  try {
+    const raw = localStorage.getItem(AUTHORS_PICKS_KEY);
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+    }
+  } catch {
+    /* ignore */
+  }
+  return [];
+}
+
+export function saveAdminAuthorsPicksOrder(orderedIds: string[]): void {
+  try {
+    localStorage.setItem(AUTHORS_PICKS_KEY, JSON.stringify(orderedIds));
+  } catch {
+    /* ignore */
+  }
+}
 
 /* ===== Articles ===== */
 
@@ -54,7 +95,65 @@ export async function fetchArticles(filters?: ArticleFilters): Promise<AdminArti
   if (filters?.category && filters.category !== 'all') {
     result = result.filter((a) => a.category_id === filters.category);
   }
+  // Sort date-wise descending (newest published/created first)
+  result.sort((a, b) => {
+    const dateA = a.published_at || a.created_at;
+    const dateB = b.published_at || b.created_at;
+    const timeA = dateA ? new Date(dateA).getTime() : 0;
+    const timeB = dateB ? new Date(dateB).getTime() : 0;
+    return timeB - timeA;
+  });
   return result;
+}
+
+export async function fetchAuthorsPicksManagement(): Promise<{
+  orderedPicks: AdminArticle[];
+  availableArticles: AdminArticle[];
+}> {
+  await delay();
+  const order = getAdminAuthorsPicksOrder();
+  const allArticles = [...mockArticles].sort((a, b) => {
+    const dateA = a.published_at || a.created_at;
+    const dateB = b.published_at || b.created_at;
+    const timeA = dateA ? new Date(dateA).getTime() : 0;
+    const timeB = dateB ? new Date(dateB).getTime() : 0;
+    return timeB - timeA;
+  });
+
+  const map = new Map(allArticles.map((a) => [a.id, a]));
+  const orderedPicks: AdminArticle[] = [];
+  const addedIds = new Set<string>();
+
+  // Add according to saved order
+  for (const id of order) {
+    const art = map.get(id);
+    if (art) {
+      art.is_authors_pick = true;
+      orderedPicks.push(art);
+      addedIds.add(id);
+    }
+  }
+
+  // Also include any articles marked is_authors_pick in mock data if not in order
+  for (const art of allArticles) {
+    if (art.is_authors_pick && !addedIds.has(art.id)) {
+      orderedPicks.push(art);
+      addedIds.add(art.id);
+    }
+  }
+
+  const availableArticles = allArticles.filter((a) => !addedIds.has(a.id));
+
+  return { orderedPicks, availableArticles };
+}
+
+export async function updateAuthorsPicksOrder(orderedIds: string[]): Promise<void> {
+  await delay();
+  saveAdminAuthorsPicksOrder(orderedIds);
+  const pickedSet = new Set(orderedIds);
+  mockArticles.forEach((a) => {
+    a.is_authors_pick = pickedSet.has(a.id);
+  });
 }
 
 export async function fetchArticleById(id: string): Promise<AdminArticle | null> {

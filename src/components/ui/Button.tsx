@@ -9,6 +9,7 @@ interface ButtonProps {
   type?: 'button' | 'submit';
   className?: string;
   fullWidth?: boolean;
+  title?: string;
 }
 
 export function Button({
@@ -20,6 +21,7 @@ export function Button({
   type = 'button',
   className = '',
   fullWidth = false,
+  title,
 }: ButtonProps) {
   const base = 'inline-flex items-center justify-center gap-2 font-body transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed';
   const variants = {
@@ -38,6 +40,7 @@ export function Button({
       type={type}
       onClick={onClick}
       disabled={disabled}
+      title={title}
       className={`${base} ${variants[variant]} ${sizes[size]} ${fullWidth ? 'w-full' : ''} ${className}`}
     >
       {children}

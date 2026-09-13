@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { BookOpen, ArrowRight } from 'lucide-react';
+import { ArrowRight, Sparkles, ShieldCheck } from 'lucide-react';
+import { TMSLogo } from '@/components/brand/TMSLogo';
 import { useAuth } from '@/lib/auth';
 import { useToast } from '@/lib/toast';
 import { Button } from '@/components/ui/Button';
@@ -9,7 +10,7 @@ import { Input } from '@/components/ui/Input';
 export function AuthPage() {
   const navigate = useNavigate();
   const location = useLocation();
-  const { signIn, signUp, signInWithGoogle } = useAuth();
+  const { signIn, signUp, signInWithGoogle, isConfigured } = useAuth();
   const { showToast } = useToast();
   const [mode, setMode] = useState<'signin' | 'signup'>('signin');
   const [email, setEmail] = useState('');
@@ -50,8 +51,13 @@ export function AuthPage() {
 
   const handleGoogle = async () => {
     setLoading(true);
+    setError('');
     try {
       await signInWithGoogle();
+      if (!isConfigured) {
+        showToast('Signed in with Google', 'success');
+        navigate(redirect);
+      }
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : 'Google sign-in failed';
       setError(message);
@@ -65,11 +71,10 @@ export function AuthPage() {
         <div className="glass-card p-8 md:p-10 animate-fade-in">
           {/* Logo */}
           <div className="flex flex-col items-center mb-8">
-            <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-brand-primary to-brand-dark flex items-center justify-center mb-4 animate-glow-pulse">
-              <BookOpen className="w-8 h-8 text-white" />
+            <div className="mb-4">
+              <TMSLogo size="lg" />
             </div>
-            <h1 className="font-display text-2xl text-primary">The Modern Stories</h1>
-            <p className="text-sm text-muted mt-1">
+            <p className="text-sm text-muted mt-1 text-center">
               {mode === 'signin' ? 'Welcome back. Continue your journey.' : 'Join us. Start your reading journey.'}
             </p>
           </div>
@@ -135,6 +140,127 @@ export function AuthPage() {
               {!loading && <ArrowRight className="w-4 h-4" />}
             </Button>
           </form>
+
+          {/* Quick Demo Credentials */}
+          <div className="mt-6 pt-5 border-t border-border/60">
+            <p className="text-xs font-semibold text-secondary uppercase tracking-wider mb-2.5 text-center">
+              Quick Demo Credentials
+            </p>
+            <div className="grid grid-cols-2 gap-2.5">
+              {/* Reader Demo */}
+              <div className="p-3 rounded-xl bg-surface-secondary/90 border border-border/80 text-left flex flex-col justify-between hover:border-brand-primary/40 transition-colors">
+                <div>
+                  <div className="flex items-center gap-1.5 text-xs font-semibold text-primary">
+                    <Sparkles className="w-3.5 h-3.5 text-brand-primary" />
+                    <span>Reader Demo</span>
+                  </div>
+                  <div className="text-[11px] text-muted truncate mt-1 font-mono">
+                    demo@modernstories.com
+                  </div>
+                  <div className="text-[10px] text-secondary mt-0.5">
+                    Pass: <span className="font-mono">password123</span>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-2 mt-3 pt-2 border-t border-border/40">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setEmail('demo@modernstories.com');
+                      setPassword('password123');
+                      setError('');
+                    }}
+                    className="text-[11px] text-secondary hover:text-primary font-medium"
+                    title="Fill fields above"
+                  >
+                    Auto-fill
+                  </button>
+                  <span className="text-border text-xs">•</span>
+                  <button
+                    type="button"
+                    disabled={loading}
+                    onClick={async () => {
+                      setEmail('demo@modernstories.com');
+                      setPassword('password123');
+                      setError('');
+                      setLoading(true);
+                      try {
+                        await signIn('demo@modernstories.com', 'password123');
+                        showToast('Signed in as Demo Reader', 'success');
+                        navigate(redirect);
+                      } catch (err: unknown) {
+                        setError(err instanceof Error ? err.message : 'Demo sign in failed');
+                      } finally {
+                        setLoading(false);
+                      }
+                    }}
+                    className="text-[11px] text-brand-primary hover:underline font-semibold"
+                    title="Sign in directly as Reader"
+                  >
+                    Instant Login →
+                  </button>
+                </div>
+              </div>
+
+              {/* Admin Demo */}
+              <div className="p-3 rounded-xl bg-surface-secondary/90 border border-border/80 text-left flex flex-col justify-between hover:border-brand-primary/40 transition-colors">
+                <div>
+                  <div className="flex items-center gap-1.5 text-xs font-semibold text-primary">
+                    <ShieldCheck className="w-3.5 h-3.5 text-brand-secondary" />
+                    <span>Admin Demo</span>
+                  </div>
+                  <div className="text-[11px] text-muted truncate mt-1 font-mono">
+                    admin@modernstories.com
+                  </div>
+                  <div className="text-[10px] text-secondary mt-0.5">
+                    Pass: <span className="font-mono">admin123456</span>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-2 mt-3 pt-2 border-t border-border/40">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setEmail('admin@modernstories.com');
+                      setPassword('admin123456');
+                      setError('');
+                    }}
+                    className="text-[11px] text-secondary hover:text-primary font-medium"
+                    title="Fill fields above"
+                  >
+                    Auto-fill
+                  </button>
+                  <span className="text-border text-xs">•</span>
+                  <button
+                    type="button"
+                    disabled={loading}
+                    onClick={async () => {
+                      setEmail('admin@modernstories.com');
+                      setPassword('admin123456');
+                      setError('');
+                      setLoading(true);
+                      try {
+                        await signIn('admin@modernstories.com', 'admin123456');
+                        showToast('Signed in as Editorial Admin', 'success');
+                        navigate(redirect);
+                      } catch (err: unknown) {
+                        setError(err instanceof Error ? err.message : 'Demo sign in failed');
+                      } finally {
+                        setLoading(false);
+                      }
+                    }}
+                    className="text-[11px] text-brand-primary hover:underline font-semibold"
+                    title="Sign in directly as Admin"
+                  >
+                    Instant Login →
+                  </button>
+                </div>
+              </div>
+            </div>
+            <p className="text-[11px] text-muted text-center mt-2.5">
+              Click Auto-fill to test the form, or Instant Login to jump straight in.
+            </p>
+          </div>
         </div>
       </div>
     </div>

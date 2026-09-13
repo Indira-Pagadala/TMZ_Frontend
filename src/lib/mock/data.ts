@@ -82,11 +82,122 @@ export const ARTICLES: Article[] = [
   { id: 'art-10', title: 'The Sleep Science Breakthroughs That Will Change How You Rest', subtitle: 'New research on circadian rhythm, sleep stages, and the optimal environment for deep sleep', category_id: 'cat-5', category: CATEGORIES[4], article_type: 'ARTICLE', cover_image_url: ARTICLE_IMAGES[9], author_id: 'u4', author_name: 'Dr. Lena Vogel', published_at: '2026-09-01T10:00:00Z', is_published: true, is_featured: false, is_authors_pick: false, reading_time_minutes: 6 },
   { id: 'art-11', title: 'Neural Interfaces: The New Human-Computer Relationship', subtitle: 'Neuralink and its competitors are closer than you think to consumer products', category_id: 'cat-1', category: CATEGORIES[0], article_type: 'ARTICLE', cover_image_url: ARTICLE_IMAGES[10], author_id: 'u2', author_name: 'Priya Nair', published_at: '2026-08-31T08:00:00Z', is_published: true, is_featured: false, is_authors_pick: false, reading_time_minutes: 7 },
   { id: 'art-12', title: 'The New Rules of Remote Leadership', subtitle: 'What three years of fully distributed teams have taught us about managing across time zones', category_id: 'cat-4', category: CATEGORIES[3], article_type: 'OPINION', cover_image_url: ARTICLE_IMAGES[11], author_id: 'u3', author_name: 'Mia Torres', published_at: '2026-08-30T12:00:00Z', is_published: true, is_featured: false, is_authors_pick: true, reading_time_minutes: 5 },
+  { id: 'art-13', title: 'This is what happens when you dont eat', subtitle: 'The biochemical cascade of prolonged fasting: from glycogen depletion to autophagy and cellular repair', category_id: 'cat-5', category: CATEGORIES[4], article_type: 'OPINION', cover_image_url: 'https://images.pexels.com/photos/1640777/pexels-photo-1640777.jpeg?auto=compress&cs=tinysrgb&w=800', author_id: 'u4', author_name: 'Dr. Lena Vogel', published_at: '2026-09-12T09:00:00Z', is_published: true, is_featured: true, is_authors_pick: true, reading_time_minutes: 6 },
 ];
 
 /* ===================== ARTICLES WITH BLOCKS ===================== */
 
 export const ARTICLES_WITH_BLOCKS: Record<string, ArticleWithBlocks> = {
+  'art-13': {
+    id: 'art-13',
+    title: 'This is what happens when you dont eat',
+    subtitle: 'The biochemical cascade of prolonged fasting: from glycogen depletion to autophagy and cellular repair',
+    category_id: 'cat-5',
+    category: CATEGORIES[4],
+    article_type: 'OPINION',
+    cover_image_url: 'https://images.pexels.com/photos/1640777/pexels-photo-1640777.jpeg?auto=compress&cs=tinysrgb&w=800',
+    author_id: 'u4',
+    author_name: 'Dr. Lena Vogel',
+    published_at: '2026-09-12T09:00:00Z',
+    is_published: true,
+    is_featured: true,
+    is_authors_pick: true,
+    reading_time_minutes: 6,
+    blocks: [
+      {
+        id: 'fasting-b1',
+        article_id: 'art-13',
+        block_type: 'TEXT',
+        order_index: 0,
+        content: 'When you stop eating, your body does not simply power down into starvation mode — it initiates a finely tuned metabolic choreography honed over millions of years of evolutionary survival.\n\nWithin hours, circulating insulin levels plummet, signaling your cells to switch metabolic gears from glucose oxidation to fat mobilization. This transition triggers profound biochemical changes across your liver, adipose tissue, brain, and immune system.',
+        image_url: null, image_caption: null, quiz_id: null, quiz: null, opinion_id: null, opinion: null, podcast_id: null, podcast: null,
+      },
+      {
+        id: 'fasting-b2',
+        article_id: 'art-13',
+        block_type: 'IMAGE',
+        order_index: 1,
+        content: null,
+        image_url: 'https://images.pexels.com/photos/1640777/pexels-photo-1640777.jpeg?auto=compress&cs=tinysrgb&w=900',
+        image_caption: 'Metabolic switching: transitioning from carbohydrate oxidation to fatty acid lipolysis and ketogenesis.',
+        quiz_id: null, quiz: null, opinion_id: null, opinion: null, podcast_id: null, podcast: null,
+      },
+      {
+        id: 'fasting-b3',
+        article_id: 'art-13',
+        block_type: 'TEXT',
+        order_index: 2,
+        content: 'The 4 Distinct Physiological Stages of Caloric Deprivation:\n\n1. Hours 0–8 (Post-Absorptive Phase): Circulating glucose and glycogen provide steady fuel while insulin gradually recedes.\n\n2. Hours 12–24 (Glycogen Depletion & Lipolysis): Liver glycogen stores deplete, prompting the breakdown of fatty acids into acetoacetate and beta-hydroxybutyrate.\n\n3. Hours 24–48 (Autophagy & Cellular Cleansing): Cells initiate autophagy, dismantling misfolded protein aggregates, dysfunctional mitochondria, and senescent waste.\n\n4. Hours 48–72+ (Deep Ketosis & Brain Adaptation): Ketone bodies cross the blood-brain barrier to supply up to 70% of cerebral energy, preserving muscle mass and sharpening cognitive alertness.',
+        image_url: null, image_caption: null, quiz_id: null, quiz: null, opinion_id: null, opinion: null, podcast_id: null, podcast: null,
+      },
+      {
+        id: 'fasting-b4',
+        article_id: 'art-13',
+        block_type: 'QUIZ',
+        order_index: 3,
+        content: null,
+        image_url: null,
+        image_caption: null,
+        quiz_id: 'quiz-fasting-1',
+        quiz: {
+          id: 'quiz-fasting-1',
+          article_id: 'art-13',
+          title: 'Metabolic Science Knowledge Check',
+          question: 'What primary metabolic shift occurs when liver glycogen is depleted around 16–24 hours into fasting?',
+          xp_reward: 20,
+          options: [
+            { id: 'qf-1', label: 'The body immediately begins breaking down vital organ proteins', is_correct: false, explanation: 'Incorrect. The body spares protein and preferentially burns stored lipids and ketones.' },
+            { id: 'qf-2', label: 'The liver increases beta-oxidation to produce ketone bodies from fats', is_correct: true, explanation: 'Correct! Hepatic ketogenesis ramps up to supply ketones (like BHB) to the brain and heart.' },
+            { id: 'qf-3', label: 'Insulin levels skyrocket to lock in remaining blood glucose', is_correct: false, explanation: 'Incorrect. Insulin levels drop significantly during fasting periods.' },
+            { id: 'qf-4', label: 'Cellular autophagy shuts down completely to conserve energy', is_correct: false, explanation: 'Incorrect. Autophagy is actually upregulated and activated during nutrient deprivation.' },
+          ],
+        },
+        opinion_id: null, opinion: null, podcast_id: null, podcast: null,
+      },
+      {
+        id: 'fasting-b5',
+        article_id: 'art-13',
+        block_type: 'TEXT',
+        order_index: 4,
+        content: 'While the cellular rejuvenation mechanisms like autophagy and insulin sensitization are compelling, clinical fasting requires individualized caution. Factors including electrolyte balance (sodium, magnesium, potassium), baseline thyroid function, cortisol curves, and personal health history determine whether fasting promotes vitality or systemic stress.\n\nResearchers emphasize that fasting should be viewed as an intermittent biological stimulus rather than an ongoing deprivation lifestyle.',
+        image_url: null, image_caption: null, quiz_id: null, quiz: null, opinion_id: null, opinion: null, podcast_id: null, podcast: null,
+      },
+      {
+        id: 'fasting-b6',
+        article_id: 'art-13',
+        block_type: 'OPINION',
+        order_index: 5,
+        content: null,
+        image_url: null,
+        image_caption: null,
+        quiz_id: null,
+        quiz: null,
+        opinion_id: 'op-fasting-1',
+        opinion: {
+          id: 'op-fasting-1',
+          article_id: 'art-13',
+          question: 'What is your opinion on intermittent and prolonged fasting protocols for human health and longevity?',
+          options: [
+            'A powerful evolutionary tool for metabolic health and cellular renewal',
+            'Effective for caloric control, but claims about longevity are overhyped',
+            'Potentially risky and unsustainable for most everyday lifestyles',
+            'Prefer regular balanced whole-food meals without rigid fasting windows',
+          ],
+          xp_reward: 50,
+          allow_custom_text: true,
+        },
+        podcast_id: null, podcast: null,
+      },
+      {
+        id: 'fasting-b7',
+        article_id: 'art-13',
+        block_type: 'TEXT',
+        order_index: 6,
+        content: 'As nutritional biochemistry continues to unravel the nuances of fasting-mimicking diets and time-restricted feeding, one truth stands clear: human metabolism was built for nutritional flexibility, oscillating between feast and famine with evolutionary resilience.',
+        image_url: null, image_caption: null, quiz_id: null, quiz: null, opinion_id: null, opinion: null, podcast_id: null, podcast: null,
+      },
+    ],
+  },
   'art-1': {
     ...ARTICLES[0],
     blocks: [
@@ -216,10 +327,10 @@ export const BADGES: Badge[] = [
 /* ===================== TEAM MEMBERS ===================== */
 
 export const TEAM_MEMBERS: TeamMember[] = [
-  { id: 'tm-1', name: 'Alex Chen', role: 'Editor in Chief', bio: 'Award-winning journalist and technologist with 15 years covering the intersection of technology and society.', image_url: 'https://images.pexels.com/photos/2379004/pexels-photo-2379004.jpeg?auto=compress&cs=tinysrgb&w=400', social_links: [{ label: 'Twitter', url: '#' }] },
-  { id: 'tm-2', name: 'Priya Nair', role: 'Science Editor', bio: 'Former research scientist turned science communicator. PhD in Molecular Biology from Cambridge.', image_url: 'https://images.pexels.com/photos/3796217/pexels-photo-3796217.jpeg?auto=compress&cs=tinysrgb&w=400', social_links: [{ label: 'LinkedIn', url: '#' }] },
-  { id: 'tm-3', name: 'Mia Torres', role: 'Culture & Society', bio: 'Cultural critic and essayist whose work has appeared in the Atlantic, Guardian, and New Yorker.', image_url: 'https://images.pexels.com/photos/3764119/pexels-photo-3764119.jpeg?auto=compress&cs=tinysrgb&w=400', social_links: [{ label: 'Twitter', url: '#' }] },
-  { id: 'tm-4', name: 'Dr. Lena Vogel', role: 'Health & Wellness', bio: 'Practising physician and researcher specialising in longevity medicine and evidence-based wellness.', image_url: 'https://images.pexels.com/photos/5386785/pexels-photo-5386785.jpeg?auto=compress&cs=tinysrgb&w=400', social_links: [{ label: 'LinkedIn', url: '#' }] },
+  { id: 'tm-1', name: 'Tolety Mohana Shyam', role: 'Founder', bio: 'At The Modern Stories, we look past the obvious to bring you the conversations that truly matter. Step beyond the bias, think critically, and see the world from a different lens.', image_url: 'https://images.pexels.com/photos/2379004/pexels-photo-2379004.jpeg?auto=compress&cs=tinysrgb&w=400', social_links: [{ label: 'Twitter', url: '#' }] },
+  { id: 'tm-2', name: 'Chinta Suguna Vanditha', role: 'Content Writer', bio: 'The Modern Stories explores the overlooked narratives of our world with honesty and nuance. Rather than telling you what to think, it invites you to look closer and see every story differently.', image_url: 'https://images.pexels.com/photos/3796217/pexels-photo-3796217.jpeg?auto=compress&cs=tinysrgb&w=400', social_links: [{ label: 'LinkedIn', url: '#' }] },
+  { id: 'tm-3', name: 'Sree Keerthana Gorty', role: 'Sr. Business Analyst', bio: 'A go to platform for modern ideas in modern platform having modern people!', image_url: 'https://images.pexels.com/photos/3764119/pexels-photo-3764119.jpeg?auto=compress&cs=tinysrgb&w=400', social_links: [{ label: 'Twitter', url: '#' }] },
+  { id: 'tm-4', name: 'Indira Pagadala', role: 'AI-ML Engineer', bio: 'Built with thoughtful journalism in mind, The Modern Stories is the perfect way to stay updated in today\'s world', image_url: 'https://images.pexels.com/photos/5386785/pexels-photo-5386785.jpeg?auto=compress&cs=tinysrgb&w=400', social_links: [{ label: 'LinkedIn', url: '#' }] },
 ];
 
 /* ===================== MOCK USER DATA (per session) ===================== */

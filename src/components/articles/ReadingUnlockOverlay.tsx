@@ -1,92 +1,149 @@
-import { Lock } from 'lucide-react';
+import { Lock, CheckCircle2, Sparkles } from 'lucide-react';
 
 interface ReadingUnlockOverlayProps {
   remainingPct: number;
   completedPct: number;
+  bonusXp?: number;
+  bounds?: { left: number; width: number } | null;
 }
 
-export function ReadingUnlockOverlay({ remainingPct, completedPct }: ReadingUnlockOverlayProps) {
-  const radius = 52;
+export function ReadingUnlockOverlay({
+  remainingPct,
+  completedPct,
+  bonusXp = 0,
+  bounds,
+}: ReadingUnlockOverlayProps) {
+  const isComplete = completedPct >= 100;
+  const radius = 18;
   const circumference = 2 * Math.PI * radius;
-  const progressOffset = circumference - (circumference * completedPct) / 100;
+  const progressOffset = circumference - (circumference * Math.min(100, completedPct)) / 100;
+
+  // Compute container position strictly locked to reading container bounds
+  const hasBounds = Boolean(bounds && bounds.width > 0);
+  const containerStyle: React.CSSProperties = hasBounds
+    ? {
+        position: 'fixed',
+        bottom: 0,
+        left: `${bounds!.left}px`,
+        width: `${bounds!.width}px`,
+        maxWidth: '100vw',
+        zIndex: 50,
+      }
+    : {
+        position: 'fixed',
+        bottom: 0,
+        left: '50%',
+        transform: 'translateX(-50%)',
+        width: '100%',
+        maxWidth: '56rem',
+        paddingLeft: '1rem',
+        paddingRight: '1rem',
+        zIndex: 50,
+      };
 
   return (
-    <div className="relative w-full h-full min-h-[300px]">
-      {/* Gradient fade from transparent to frosted glass */}
+    <div
+      className="pointer-events-none flex justify-center items-end"
+      style={containerStyle}
+      role="status"
+      aria-label={`Reading progress: ${completedPct}%`}
+    >
+      {/* Taller Rectangular Frosted Glass Dock with extended height and feather mask */}
       <div
-        className="absolute inset-x-0 top-0 h-24 pointer-events-none"
+        className="relative w-full rounded-t-3xl px-5 sm:px-8 md:px-12 pt-20 sm:pt-24 pb-5 sm:pb-6 flex flex-col items-center justify-end pointer-events-auto transition-all duration-300 overflow-hidden"
         style={{
-          background: 'linear-gradient(to bottom, transparent, var(--bg-glass))',
+          background: 'linear-gradient(180deg, transparent 0%, var(--bg-glass) 35%, var(--bg-card) 75%, var(--bg-card) 100%)',
+          backdropFilter: 'blur(32px)',
+          WebkitBackdropFilter: 'blur(32px)',
+          maskImage: 'linear-gradient(to bottom, transparent 0%, rgba(0, 0, 0, 0.5) 18%, black 40%, black 100%)',
+          WebkitMaskImage: 'linear-gradient(to bottom, transparent 0%, rgba(0, 0, 0, 0.5) 18%, black 40%, black 100%)',
+          boxShadow: '0 -16px 40px -8px rgba(0, 0, 0, 0.2)',
         }}
-      />
-
-      {/* Main frosted glass area */}
-      <div
-        className="absolute inset-x-0 top-24 bottom-0"
-        style={{
-          background: 'var(--bg-glass)',
-          backdropFilter: 'blur(16px)',
-          WebkitBackdropFilter: 'blur(16px)',
-          borderTop: '1px solid var(--bg-glass-border)',
-        }}
-      />
-
-      {/* Centered content card */}
-      <div className="relative z-10 flex flex-col items-center justify-center pt-32 pb-16 px-4">
-        {/* Semi-circular progress indicator */}
-        <div className="relative w-32 h-32 mb-6">
-          <svg className="w-full h-full -rotate-90" viewBox="0 0 120 120">
-            <circle
-              cx="60" cy="60" r={radius}
-              fill="none"
-              stroke="var(--border-default)"
-              strokeWidth="6"
-            />
-            <circle
-              cx="60" cy="60" r={radius}
-              fill="none"
-              stroke="var(--brand-primary)"
-              strokeWidth="6"
-              strokeLinecap="round"
-              strokeDasharray={circumference}
-              strokeDashoffset={progressOffset}
-              style={{ transition: 'stroke-dashoffset 0.8s ease' }}
-            />
-          </svg>
-          <div className="absolute inset-0 flex items-center justify-center flex-col">
-            <span className="font-display text-2xl text-primary">{completedPct}%</span>
-            <span className="text-[10px] text-muted uppercase tracking-wider">complete</span>
-          </div>
-        </div>
-
-        {/* Glass card with lock info */}
+      >
+        {/* Soft, feathered ambient glow line blending into background */}
         <div
-          className="rounded-2xl p-6 max-w-sm w-full text-center pointer-events-auto"
+          className="absolute top-0 left-0 right-0 h-20 pointer-events-none opacity-25"
           style={{
-            background: 'var(--bg-glass)',
-            backdropFilter: 'blur(20px)',
-            WebkitBackdropFilter: 'blur(20px)',
-            border: '1px solid var(--bg-glass-border)',
-            boxShadow: 'var(--shadow-elevated)',
+            background: isComplete
+              ? 'radial-gradient(ellipse at 50% 0%, var(--brand-secondary) 0%, transparent 75%)'
+              : 'radial-gradient(ellipse at 50% 0%, var(--brand-primary) 0%, transparent 75%)',
           }}
-        >
-          <div className="w-12 h-12 rounded-xl bg-brand-primary/10 flex items-center justify-center mx-auto mb-4">
-            <Lock className="w-6 h-6 text-brand-primary" />
-          </div>
-          <p className="font-display text-lg text-primary mb-2">
-            You've completed {completedPct}% of this story
-          </p>
-          <p className="text-sm text-muted mb-5">
-            {remainingPct}% remaining — keep scrolling to unlock
-          </p>
+        />
 
-          {/* Progress bar */}
-          <div className="w-full h-2 rounded-full overflow-hidden" style={{ background: 'var(--border-default)' }}>
+        {/* Content Centered inside the glassmorphism overlay */}
+        <div className="relative z-10 w-full max-w-2xl mx-auto flex flex-col items-center justify-center gap-3">
+          {/* Top Row: Circular Ring + Centered Text Information + Reward Badge */}
+          <div className="w-full flex items-center justify-between gap-3 sm:gap-5">
+            {/* Circular Progress Ring */}
+            <div className="relative w-10 h-10 sm:w-11 sm:h-11 shrink-0 flex items-center justify-center">
+              <svg className="w-10 h-10 sm:w-11 sm:h-11 -rotate-90" viewBox="0 0 44 44">
+                <circle
+                  cx="22"
+                  cy="22"
+                  r={radius}
+                  fill="none"
+                  stroke="var(--border-default)"
+                  strokeWidth="3.5"
+                  opacity="0.6"
+                />
+                <circle
+                  cx="22"
+                  cy="22"
+                  r={radius}
+                  fill="none"
+                  stroke={isComplete ? 'var(--brand-secondary)' : 'var(--brand-primary)'}
+                  strokeWidth="3.5"
+                  strokeLinecap="round"
+                  strokeDasharray={circumference}
+                  strokeDashoffset={progressOffset}
+                  style={{ transition: 'stroke-dashoffset 0.3s ease' }}
+                />
+              </svg>
+              <div className="absolute inset-0 flex items-center justify-center">
+                {isComplete ? (
+                  <CheckCircle2 className="w-4 h-4 sm:w-5 sm:h-5 text-brand-secondary" />
+                ) : (
+                  <Lock className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-brand-primary" />
+                )}
+              </div>
+            </div>
+
+            {/* Reading Status Text - Fully Centered */}
+            <div className="flex-1 min-w-0 flex flex-col items-center justify-center text-center px-2">
+              <div className="flex items-center justify-center gap-2 flex-wrap text-center">
+                <span className="text-primary font-bold text-sm sm:text-base tracking-tight whitespace-nowrap">
+                  {isComplete ? 'Story Completed' : `${completedPct}% Read`}
+                </span>
+                <span className="text-muted text-xs whitespace-nowrap">
+                  {isComplete ? '• Reached Comments' : `• ${remainingPct}% left`}
+                </span>
+              </div>
+              <p className="text-xs text-muted line-clamp-1 mt-0.5 text-center">
+                {isComplete
+                  ? 'Keep scrolling comments to claim shareable card'
+                  : 'Scroll down as you read to unlock completion card'}
+              </p>
+            </div>
+
+            {/* Reward Badge */}
+            <div className="shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold bg-brand-primary/15 text-brand-primary border border-brand-primary/25 shadow-sm whitespace-nowrap">
+              <Sparkles className="w-3.5 h-3.5" />
+              <span>+{30 + bonusXp} XP</span>
+            </div>
+          </div>
+
+          {/* Progress Bar along bottom of info */}
+          <div
+            className="w-full h-1.5 sm:h-2 rounded-full overflow-hidden shadow-inner"
+            style={{ background: 'var(--border-default)' }}
+          >
             <div
-              className="h-full rounded-full transition-all duration-700"
+              className="h-full rounded-full transition-all duration-300"
               style={{
-                width: `${completedPct}%`,
-                background: 'linear-gradient(90deg, var(--brand-primary), var(--brand-secondary))',
+                width: `${Math.min(100, completedPct)}%`,
+                background: isComplete
+                  ? 'var(--brand-secondary)'
+                  : 'linear-gradient(90deg, var(--brand-primary), var(--brand-secondary))',
               }}
             />
           </div>

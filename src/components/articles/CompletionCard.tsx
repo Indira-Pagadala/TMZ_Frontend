@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
-import { BookOpen, Share2, Copy, X, Quote, Check } from 'lucide-react';
+import { Share2, Copy, X, Quote, Check } from 'lucide-react';
 import { useToast } from '@/lib/toast';
+import { TMSLogo } from '@/components/brand/TMSLogo';
 
 export interface CompletionCardProps {
   username: string;
@@ -155,12 +156,7 @@ export function CompletionCard({
 
         {/* Top bar: Logo + Site name on left, Total XP pill on right */}
         <div className={`flex items-center justify-between mb-8 ${onClose ? 'pr-8' : ''}`}>
-          <div className="flex items-center gap-2.5">
-            <div className="w-9 h-9 rounded-xl bg-brand-dark flex items-center justify-center shadow-sm">
-              <BookOpen className="w-5 h-5 text-white" />
-            </div>
-            <span className="font-display font-semibold text-sm text-primary tracking-tight">The Modern Stories</span>
-          </div>
+          <TMSLogo size="sm" />
 
           <div className="px-3.5 py-1.5 rounded-full bg-brand-secondary/10 border border-brand-secondary/20 flex items-center gap-1.5 shadow-sm">
             <span className="font-display font-bold text-base text-brand-secondary">+{xpGained}</span>

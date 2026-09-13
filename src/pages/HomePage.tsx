@@ -12,6 +12,7 @@ import {
 import { SectionHeader, LoadingState, ErrorState } from '@/components/ui/States';
 import { BookmarkButton } from '@/components/articles/BookmarkButton';
 import { GlowingEffect } from '@/components/articles/GlowingEffect';
+import { HeroBanner } from '@/components/home/HeroBanner';
 import { useAuth } from '@/lib/auth';
 import { ContactSection } from '@/components/common/ContactSection';
 
@@ -77,10 +78,13 @@ export function HomePage() {
   };
 
   return (
-    <div className="relative z-10 max-w-[1440px] 2xl:max-w-[1536px] mx-auto px-4 sm:px-6 lg:px-8 xl:px-10 py-8 space-y-16 lg:space-y-20">
+    <div className="relative z-10 max-w-[1440px] 2xl:max-w-[1536px] mx-auto px-4 sm:px-6 lg:px-8 xl:px-10 py-6 sm:py-8 space-y-8 sm:space-y-10 lg:space-y-12">
+      {/* 0. EDITORIAL HERO BANNER — Static Image Card with Know More -> link */}
+      <HeroBanner />
+
       {/* 1. PROMOTIONS CAROUSEL — top, 3s auto-slideshow */}
       {promotions.length > 0 && (
-        <section>
+        <section id="promotions-section">
           <SectionHeader title="Promotions" />
           <PromotionCarousel promotions={promotions} intervalMs={3000} formatDate={formatDate} />
         </section>
@@ -88,7 +92,7 @@ export function HomePage() {
 
       {/* 2. LATEST — continuous marquee with LARGE vertical cards matching CategoryPage ArticleCard */}
       {latest.length > 0 && (
-        <section>
+        <section id="latest-section">
           <SectionHeader title="Latest" />
           <LatestMarquee articles={latest} onArticleClick={handleArticleClick} />
         </section>
@@ -314,7 +318,7 @@ function ArticleCarouselRow({
 
   return (
     <section>
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex items-center justify-between mb-3.5 sm:mb-4">
         <h2 className="font-display text-2xl md:text-3xl text-primary">{title}</h2>
         <div className="flex items-center gap-2 sm:gap-3">
           {action && (
@@ -350,7 +354,7 @@ function ArticleCarouselRow({
       <div
         ref={rowRef}
         onScroll={checkScroll}
-        className="flex gap-5 overflow-x-auto no-scrollbar scroll-smooth snap-x pb-4 pt-1 px-1"
+        className="flex gap-4 sm:gap-5 overflow-x-auto no-scrollbar scroll-smooth snap-x pb-2 pt-1 px-1"
       >
         {articles.map((article) => (
           <AuthorsPickCard
@@ -373,7 +377,7 @@ function LatestMarquee({ articles, onArticleClick }: { articles: Article[]; onAr
   const items = [...articles, ...articles];
 
   return (
-    <div className="relative overflow-hidden py-3">
+    <div className="relative overflow-hidden py-1">
       <div className="marquee-track gap-5">
         {items.map((article, i) => (
           <div

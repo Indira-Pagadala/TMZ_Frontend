@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import {
   FileText, Plus, Edit3, Trash2, Send, Globe, GlobeLock,
   Archive, Star, ArrowLeft, Save, Loader2, GripVertical,
@@ -10,6 +10,7 @@ import { GlassCard } from '@/components/ui/GlassCard';
 import { Modal } from '@/components/ui/States';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
+import { TextFormattingBar } from '@/components/admin/TextFormattingBar';
 import {
   fetchArticles, fetchCategories, createArticle, updateArticle, deleteArticle,
   type ArticleFilters,
@@ -663,12 +664,9 @@ function BlockEditor({
 
       {/* Block Content */}
       {block.block_type === 'TEXT' && (
-        <textarea
-          className="input-field resize-none"
-          rows={4}
-          value={block.content}
-          onChange={(e) => onUpdate({ content: e.target.value })}
-          placeholder="Write your text content here..."
+        <TextBlockEditor
+          content={block.content}
+          onUpdate={(content) => onUpdate({ content })}
         />
       )}
 
@@ -795,6 +793,42 @@ function BlockEditor({
         </div>
       )}
     </GlassCard>
+  );
+}
+
+/* ===== Text Block Editor with Formatting Bar ===== */
+
+function TextBlockEditor({
+  content,
+  onUpdate,
+}: {
+  content: string;
+  onUpdate: (content: string) => void;
+}) {
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  return (
+    <div className="space-y-2">
+      <TextFormattingBar
+        textareaRef={textareaRef}
+        content={content}
+        onChange={onUpdate}
+      />
+
+      <textarea
+        ref={textareaRef}
+        className="input-field resize-y font-mono text-sm leading-relaxed min-h-[140px]"
+        rows={6}
+        value={content}
+        onChange={(e) => onUpdate(e.target.value)}
+        placeholder="Write your text content here... Click 'H2 Subheading' or toolbar buttons above to format."
+      />
+
+      <div className="flex items-center justify-between text-[11px] text-muted px-1">
+        <span>Click <strong>H2 Subheading</strong>, <strong>Bold</strong>, <strong>Italic</strong>, or <strong>Underline</strong> to format text</span>
+        <span>{content.length} characters</span>
+      </div>
+    </div>
   );
 }
 

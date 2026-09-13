@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { Plus, Pencil, Trash2, Loader2 } from 'lucide-react';
+import { Plus, Pencil, Trash2, Loader2, X } from 'lucide-react';
 import type { Advertisement, AdSlot, AdStatus } from '@/lib/admin/adminTypes';
 import {
   fetchAdvertisements, createAdvertisement, updateAdvertisement, deleteAdvertisement,
@@ -122,40 +122,59 @@ export function AdvertisementsSection(): JSX.Element {
 
       <Modal isOpen={modalOpen} onClose={() => setModalOpen(false)}>
         <div className="space-y-4">
-          <h3 className="font-display text-xl" style={{ color: 'var(--text-primary)' }}>{editing ? 'Edit' : 'Add'} {tab === 'ads' ? 'Advertisement' : 'Ad Slot'}</h3>
+          <div className="flex items-center justify-between border-b pb-3" style={{ borderColor: 'var(--border-default)' }}>
+            <h3 className="font-display text-lg sm:text-xl" style={{ color: 'var(--text-primary)' }}>
+              {editing ? 'Edit' : 'Add'} {tab === 'ads' ? 'Advertisement' : 'Ad Slot'}
+            </h3>
+            <button
+              onClick={() => setModalOpen(false)}
+              className="p-1 rounded-lg text-secondary hover:text-primary hover:bg-brand-accent/10 transition-colors"
+              aria-label="Close modal"
+            >
+              <X className="w-5 h-5" />
+            </button>
+          </div>
+
           {tab === 'ads' ? (
-            <>
+            <div className="space-y-3.5 pt-1">
               <Input label="Title" value={String(form.title || '')} onChange={(e) => setForm((p) => ({ ...p, title: e.target.value }))} />
               <Input label="Image URL" value={String(form.image_url || '')} onChange={(e) => setForm((p) => ({ ...p, image_url: e.target.value }))} />
               <Input label="Target URL" value={String(form.target_url || '')} onChange={(e) => setForm((p) => ({ ...p, target_url: e.target.value }))} />
-              <div className="space-y-1.5">
-                <label className="block text-sm font-body" style={{ color: 'var(--text-secondary)' }}>Ad Slot</label>
-                <select className="input-field" value={String(form.ad_slot_id || '')} onChange={(e) => setForm((p) => ({ ...p, ad_slot_id: e.target.value }))}>
-                  <option value="">None</option>
-                  {slots.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
-                </select>
+              
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div className="space-y-1.5">
+                  <label className="block text-sm font-body" style={{ color: 'var(--text-secondary)' }}>Ad Slot</label>
+                  <select className="input-field" value={String(form.ad_slot_id || '')} onChange={(e) => setForm((p) => ({ ...p, ad_slot_id: e.target.value }))}>
+                    <option value="">None</option>
+                    {slots.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
+                  </select>
+                </div>
+                <div className="space-y-1.5">
+                  <label className="block text-sm font-body" style={{ color: 'var(--text-secondary)' }}>Status</label>
+                  <select className="input-field" value={String(form.status || 'ACTIVE')} onChange={(e) => setForm((p) => ({ ...p, status: e.target.value }))}>
+                    {AD_STATUSES.map((s) => <option key={s} value={s}>{s}</option>)}
+                  </select>
+                </div>
               </div>
-              <div className="space-y-1.5">
-                <label className="block text-sm font-body" style={{ color: 'var(--text-secondary)' }}>Status</label>
-                <select className="input-field" value={String(form.status || 'ACTIVE')} onChange={(e) => setForm((p) => ({ ...p, status: e.target.value }))}>
-                  {AD_STATUSES.map((s) => <option key={s} value={s}>{s}</option>)}
-                </select>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <Input label="Starts At" type="datetime-local" value={String(form.starts_at || '')} onChange={(e) => setForm((p) => ({ ...p, starts_at: e.target.value }))} />
+                <Input label="Ends At" type="datetime-local" value={String(form.ends_at || '')} onChange={(e) => setForm((p) => ({ ...p, ends_at: e.target.value }))} />
               </div>
-              <Input label="Starts At" type="datetime-local" value={String(form.starts_at || '')} onChange={(e) => setForm((p) => ({ ...p, starts_at: e.target.value }))} />
-              <Input label="Ends At" type="datetime-local" value={String(form.ends_at || '')} onChange={(e) => setForm((p) => ({ ...p, ends_at: e.target.value }))} />
-            </>
+            </div>
           ) : (
-            <>
+            <div className="space-y-3.5 pt-1">
               <Input label="Name" value={String(form.name || '')} onChange={(e) => setForm((p) => ({ ...p, name: e.target.value }))} />
               <Input label="Slug" value={String(form.slug || '')} onChange={(e) => setForm((p) => ({ ...p, slug: e.target.value }))} />
               <Input label="Placement" value={String(form.placement || '')} onChange={(e) => setForm((p) => ({ ...p, placement: e.target.value }))} />
               <Input label="Description" value={String(form.description || '')} onChange={(e) => setForm((p) => ({ ...p, description: e.target.value }))} />
-              <label className="flex items-center gap-2 font-body text-sm" style={{ color: 'var(--text-secondary)' }}>
+              <label className="flex items-center gap-2 font-body text-sm pt-1" style={{ color: 'var(--text-secondary)' }}>
                 <input type="checkbox" checked={Boolean(form.is_active)} onChange={(e) => setForm((p) => ({ ...p, is_active: e.target.checked }))} /> Active
               </label>
-            </>
+            </div>
           )}
-          <div className="flex justify-end gap-2 pt-2">
+
+          <div className="flex justify-end gap-2 pt-3 border-t" style={{ borderColor: 'var(--border-default)' }}>
             <Button variant="secondary" onClick={() => setModalOpen(false)}>Cancel</Button>
             <Button onClick={() => void save()}>Save</Button>
           </div>
@@ -164,9 +183,9 @@ export function AdvertisementsSection(): JSX.Element {
 
       <Modal isOpen={deleteId !== null} onClose={() => setDeleteId(null)}>
         <div className="space-y-4">
-          <h3 className="font-display text-xl" style={{ color: 'var(--text-primary)' }}>Delete?</h3>
+          <h3 className="font-display text-lg sm:text-xl" style={{ color: 'var(--text-primary)' }}>Delete?</h3>
           <p className="font-body text-sm" style={{ color: 'var(--text-secondary)' }}>This action cannot be undone.</p>
-          <div className="flex justify-end gap-2">
+          <div className="flex justify-end gap-2 pt-2 border-t" style={{ borderColor: 'var(--border-default)' }}>
             <Button variant="secondary" onClick={() => setDeleteId(null)}>Cancel</Button>
             <Button onClick={() => void confirmDelete()}>Delete</Button>
           </div>

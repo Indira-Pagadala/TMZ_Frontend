@@ -3,7 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { ArrowLeft, Home, Layers, User } from 'lucide-react';
 import type { ArticleWithBlocks, Level, Badge, Article } from '@/types';
 import { useAuth } from '@/lib/auth';
-import { useToast } from '@/lib/toast';
+import { fireCelebrationConfetti } from '@/lib/confetti';
 import {
   fetchArticleById,
   fetchReadingProgress,
@@ -29,13 +29,10 @@ import { BadgePopup } from '@/components/articles/BadgePopup';
 import { ReadingUnlockOverlay } from '@/components/articles/ReadingUnlockOverlay';
 import { ConditionalAdSlot } from '@/components/articles/AdSlot';
 
-const LOCK_PERCENT = 40;
-
 export function ArticlePage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { user, profile, refreshProfile } = useAuth();
-  const { showToast } = useToast();
 
   const [article, setArticle] = useState<ArticleWithBlocks | null>(null);
   const [loading, setLoading] = useState(true);
@@ -58,13 +55,69 @@ export function ArticlePage() {
     opinionText: string;
     xpGained: number;
   } | null>(null);
+  const [scrolledThroughComments, setScrolledThroughComments] = useState(false);
+  const [articleBounds, setArticleBounds] = useState<{ left: number; width: number } | null>(null);
 
   const contentRef = useRef<HTMLDivElement>(null);
+  const commentsRef = useRef<HTMLDivElement>(null);
   const articleRef = useRef<HTMLDivElement>(null);
   const lastSaveRef = useRef<number>(0);
   const quizXpRef = useRef<number>(0);
   const userDidScrollRef = useRef<boolean>(false);
   const completionTriggeredRef = useRef<boolean>(false);
+
+  // Measure article reading container bounds so overlay aligns strictly inside reading page
+  const prevBoundsRef = useRef<{ left: number; width: number } | null>(null);
+
+  useEffect(() => {
+    const updateBounds = () => {
+      if (articleRef.current) {
+        const rect = articleRef.current.getBoundingClientRect();
+        if (rect.width > 0) {
+          const left = Math.round(rect.left);
+          const width = Math.round(rect.width);
+          if (
+            !prevBoundsRef.current ||
+            Math.abs(prevBoundsRef.current.left - left) > 1 ||
+            Math.abs(prevBoundsRef.current.width - width) > 1
+          ) {
+            prevBoundsRef.current = { left, width };
+            setArticleBounds({ left, width });
+          }
+        }
+      }
+    };
+
+    updateBounds();
+    const t1 = setTimeout(updateBounds, 60);
+    const t2 = setTimeout(updateBounds, 200);
+    const t3 = setTimeout(updateBounds, 500);
+
+    window.addEventListener('resize', updateBounds, { passive: true });
+    window.addEventListener('orientationchange', updateBounds, { passive: true });
+    window.addEventListener('scroll', updateBounds, { passive: true });
+
+    let ro: ResizeObserver | null = null;
+    if (articleRef.current && typeof ResizeObserver !== 'undefined') {
+      ro = new ResizeObserver(() => {
+        requestAnimationFrame(updateBounds);
+      });
+      ro.observe(articleRef.current);
+      if (document.body) {
+        ro.observe(document.body);
+      }
+    }
+
+    return () => {
+      clearTimeout(t1);
+      clearTimeout(t2);
+      clearTimeout(t3);
+      window.removeEventListener('resize', updateBounds);
+      window.removeEventListener('orientationchange', updateBounds);
+      window.removeEventListener('scroll', updateBounds);
+      if (ro) ro.disconnect();
+    };
+  }, [article, id]);
 
   // Scroll to top on every article open — do NOT inherit previous scroll position
   useEffect(() => {
@@ -121,13 +174,13 @@ export function ArticlePage() {
     }).catch(() => setCompletionChecked(true));
   }, [user, id]);
 
-  // Scroll-based progressive unlock
+  // Scroll-based progressive unlock & detection of comments section
   useEffect(() => {
     if (!article || !contentRef.current) return;
 
     const handleScroll = () => {
-      if (!contentRef.current) return;
       userDidScrollRef.current = true;
+      if (!contentRef.current) return;
       const el = contentRef.current;
       const rect = el.getBoundingClientRect();
       const windowHeight = window.innerHeight;
@@ -135,10 +188,25 @@ export function ArticlePage() {
 
       if (contentHeight === 0) return;
 
-      const scrolledIntoView = Math.max(0, windowHeight - rect.top);
-      const visiblePct = Math.min(100, (scrolledIntoView / contentHeight) * 100);
+      // Check if user has reached the comments section / comments text box
+      let isAtComments = false;
+      if (commentsRef.current) {
+        const commentsRect = commentsRef.current.getBoundingClientRect();
+        // As soon as the comments header and text box enter the viewport
+        if (commentsRect.top <= windowHeight * 0.88 || commentsRect.top <= windowHeight - 40) {
+          isAtComments = true;
+          setScrolledThroughComments(true);
+        }
+      }
 
-      const step = 5;
+      const scrolledIntoView = Math.max(0, windowHeight - rect.top);
+      let visiblePct = Math.min(100, Math.round((scrolledIntoView / contentHeight) * 100));
+
+      if (isAtComments) {
+        visiblePct = 100;
+      }
+
+      const step = 2;
       const newUnlocked = Math.min(100, Math.max(unlockedPct, Math.ceil(visiblePct / step) * step));
 
       if (newUnlocked > unlockedPct) {
@@ -154,25 +222,37 @@ export function ArticlePage() {
     };
 
     window.addEventListener('scroll', handleScroll, { passive: true });
+    // Run once on mount / update
+    handleScroll();
     return () => window.removeEventListener('scroll', handleScroll);
   }, [article, unlockedPct, user, id]);
 
-  // Completion — only when user has genuinely scrolled to 100%
+  // Completion — trigger confetti and show card immediately as soon as user reaches the comments box
   useEffect(() => {
-    if (!user || !id || !article || unlockedPct < 100 || !completionChecked || completionTriggeredRef.current) return;
-    // Trigger ONLY after genuine article completion/reading progress, NOT on open
+    if (!id || !article || unlockedPct < 100 || !scrolledThroughComments || !completionChecked || completionTriggeredRef.current) return;
+    // Trigger ONLY after genuine article completion/reading progress, NOT on cold load
     if (!userDidScrollRef.current) return;
 
     completionTriggeredRef.current = true;
 
-    const checkCompletion = async () => {
-      try {
-        const completionXp = 30 + quizXpRef.current;
-        setCompletionCardXp(completionXp);
-        setTotalXp(completionXp);
-        const result = await createCompletionCard(user.id, id, article.title, completionXp, 'completion');
+    // Fire confetti burst immediately
+    fireCelebrationConfetti();
 
-        if (!result.already_completed) {
+    const completionXp = 30 + quizXpRef.current;
+    setCompletionCardXp(completionXp);
+    setTotalXp(completionXp);
+
+    // Show the card right with the confetti burst
+    const modalTimer = setTimeout(() => {
+      setShowCompletionModal(true);
+    }, 180);
+
+    const recordCompletion = async () => {
+      try {
+        const userId = user?.id || 'demo-reader';
+        const result = await createCompletionCard(userId, id, article.title, completionXp, 'completion');
+
+        if (!result.already_completed && user) {
           setShowXp(true);
           await refreshProfile();
 
@@ -199,50 +279,62 @@ export function ArticlePage() {
             }
           }
         }
-
-        // Show the completion modal popup
-        setShowCompletionModal(true);
       } catch {
-        showToast('Could not save completion', 'error');
+        /* background sync fallback */
       }
     };
 
-    checkCompletion();
-  }, [unlockedPct, user, id, article, completionChecked, profile, showToast, refreshProfile]);
+    recordCompletion();
+
+    return () => clearTimeout(modalTimer);
+  }, [unlockedPct, scrolledThroughComments, user, id, article, completionChecked, profile, refreshProfile]);
 
   const handleQuizResult = useCallback((xp: number) => {
     quizXpRef.current += xp;
     setShowXp(true);
     setTotalXp((prev) => prev + xp);
+    setCompletionCardXp(30 + quizXpRef.current);
     setTimeout(() => setShowXp(false), 2000);
   }, []);
 
   const handleOpinionSubmit = useCallback(async (opinionText: string) => {
-    if (!user || !article || !id) return;
+    if (!article || !id) return;
     const opinionXp = 50;
     setShowXp(true);
     try {
-      await createOpinionCard(user.id, id, article.title, opinionText, opinionXp);
-      await refreshProfile();
+      const userId = user?.id || 'demo-user';
+      await createOpinionCard(userId, id, article.title, opinionText, opinionXp);
+      if (user) {
+        await refreshProfile();
+      }
       setOpinionModalData({
         opinionText,
         xpGained: opinionXp,
       });
     } catch {
-      /* fallback */
+      setOpinionModalData({
+        opinionText,
+        xpGained: opinionXp,
+      });
     }
     setTimeout(() => setShowXp(false), 2000);
   }, [user, article, id, refreshProfile]);
 
-  const handleBack = useCallback(() => {
-    if (window.history.length > 1) { navigate(-1); } else { navigate('/'); }
+  const handleBack = useCallback((e?: React.MouseEvent) => {
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+    if (window.history.state && typeof window.history.state.idx === 'number' && window.history.state.idx > 0) {
+      navigate(-1);
+    } else {
+      navigate('/');
+    }
   }, [navigate]);
 
   if (loading) return <LoadingState message="Loading article..." />;
   if (error || !article) return <ErrorState message="Article not found." onRetry={() => navigate('/')} />;
   if (!user) { navigate('/auth', { state: { redirect: `/article/${id}` } }); return null; }
-
-  const isFullyUnlocked = unlockedPct >= 100;
 
   const typeLabel = article.article_type === 'PODCAST' ? 'Podcast'
     : article.article_type === 'QUIZ' ? 'Quiz'
@@ -272,9 +364,14 @@ export function ArticlePage() {
           <div className="flex-1 min-w-0 w-full">
             {/* Top controls */}
             <div className="flex items-center justify-between mb-6 md:mb-8">
-              <button onClick={handleBack} className="flex items-center gap-2 text-sm text-secondary hover:text-primary transition-colors">
-                <ArrowLeft className="w-4 h-4" />
-                Back
+              <button
+                type="button"
+                onClick={handleBack}
+                className="inline-flex items-center gap-2 px-3 py-1.5 -ml-2 rounded-xl text-sm font-medium text-secondary hover:text-primary hover:bg-white/5 active:scale-95 transition-all cursor-pointer select-none"
+                aria-label="Go back"
+              >
+                <ArrowLeft className="w-4 h-4 shrink-0" />
+                <span>Back</span>
               </button>
               <BookmarkButton articleId={article.id} variant="toggle" />
             </div>
@@ -299,9 +396,8 @@ export function ArticlePage() {
                 </p>
               </div>
 
-              {/* ALL blocks are in the DOM. Glassmorphism overlay covers the locked portion. */}
+              {/* ALL blocks are in the DOM — completely readable and interactive */}
               <div ref={contentRef} className="relative">
-                {/* Render all blocks — content stays in DOM */}
                 {article.blocks.map((block) => (
                   <ArticleBlockRenderer
                     key={block.id}
@@ -310,23 +406,15 @@ export function ArticlePage() {
                     onOpinionSubmit={handleOpinionSubmit}
                   />
                 ))}
-
-                {/* Glassmorphism lock overlay — covers the bottom portion until fully unlocked */}
-                {!isFullyUnlocked && article.blocks.length > 0 && (
-                  <div
-                    className="absolute left-0 right-0 bottom-0 pointer-events-none"
-                    style={{ top: `${LOCK_PERCENT}%` }}
-                  >
-                    <ReadingUnlockOverlay remainingPct={100 - unlockedPct} completedPct={unlockedPct} />
-                  </div>
-                )}
               </div>
 
               {/* Ad slot */}
               <ConditionalAdSlot enabled={false} />
 
-              {/* Comments */}
-              <CommentsSection articleId={article.id} />
+              {/* Comments Section */}
+              <div ref={commentsRef} id="comments-section">
+                <CommentsSection articleId={article.id} />
+              </div>
             </article>
           </div>
 
@@ -357,6 +445,16 @@ export function ArticlePage() {
         </div>
       </div>
 
+      {/* Curved/oval glassmorphism reading progress bar — static at bottom of viewport, strictly contained in reading page */}
+      {article && (
+        <ReadingUnlockOverlay
+          remainingPct={Math.max(0, 100 - unlockedPct)}
+          completedPct={unlockedPct}
+          bonusXp={quizXpRef.current}
+          bounds={articleBounds}
+        />
+      )}
+
       {/* XP Animation */}
       {showXp && (
         <XPRewardAnimation xp={totalXp} onComplete={() => setShowXp(false)} />
@@ -370,7 +468,7 @@ export function ArticlePage() {
             style={{ background: 'var(--modal-overlay)', backdropFilter: 'blur(10px)' }}
             onClick={() => setShowCompletionModal(false)}
           />
-          <div className="relative z-10 w-full max-w-lg">
+          <div className="relative z-10 w-full max-w-lg animate-scale-in">
             <CompletionCard
               cardType="completion"
               username={profile?.display_name || user?.email || 'Reader'}

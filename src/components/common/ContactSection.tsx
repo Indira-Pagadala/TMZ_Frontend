@@ -85,7 +85,7 @@ export function ContactSection({ id = 'contact' }: ContactSectionProps) {
 
   return (
     <section id={id} className="scroll-mt-20 max-w-7xl mx-auto w-full">
-      <h2 className="font-display text-3xl text-primary text-center mb-10">Contact Us</h2>
+      <h2 className="font-display text-2xl sm:text-3xl text-primary text-center mb-6">Contact Us</h2>
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         {/* Business Enquiry */}
         <div className="glass-card p-6 md:p-8">

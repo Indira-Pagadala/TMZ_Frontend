@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { Plus, Pencil, Trash2, Loader2, ExternalLink, Calendar } from 'lucide-react';
+import { Plus, Pencil, Trash2, Loader2, ExternalLink, Calendar, X } from 'lucide-react';
 import type { AdminPromotion } from '@/lib/admin/adminTypes';
 import { fetchPromotions, createPromotion, updatePromotion, deletePromotion } from '@/lib/admin/api';
 import { useToast } from '@/lib/toast';
@@ -72,8 +72,12 @@ export function PromotionsSection(): JSX.Element {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {items.map((p) => (
             <GlassCard key={p.id} className="p-5 space-y-3">
-              <div className="aspect-video rounded-lg flex items-center justify-center" style={{ background: 'var(--border-default)' }}>
-                {p.image_url ? <img src={p.image_url} alt="" className="w-full h-full object-cover rounded-lg" /> : <span className="font-body text-sm" style={{ color: 'var(--text-muted)' }}>No image</span>}
+              <div className="aspect-video rounded-lg flex items-center justify-center overflow-hidden" style={{ background: 'var(--border-default)' }}>
+                {p.image_url ? (
+                  <img src={p.image_url} alt="" className="w-full h-full object-cover rounded-lg" referrerPolicy="no-referrer" />
+                ) : (
+                  <span className="font-body text-sm" style={{ color: 'var(--text-muted)' }}>No image</span>
+                )}
               </div>
               <div className="flex items-start justify-between gap-2">
                 <h3 className="font-display text-lg" style={{ color: 'var(--text-primary)' }}>{p.title}</h3>
@@ -104,17 +108,32 @@ export function PromotionsSection(): JSX.Element {
 
       <Modal isOpen={modalOpen} onClose={() => setModalOpen(false)}>
         <div className="space-y-4">
-          <h3 className="font-display text-xl" style={{ color: 'var(--text-primary)' }}>{editing ? 'Edit' : 'Add'} Promotion</h3>
-          <Input label="Title" value={String(form.title)} onChange={(e) => setForm((p) => ({ ...p, title: e.target.value }))} />
-          <Input label="Description" value={String(form.description)} onChange={(e) => setForm((p) => ({ ...p, description: e.target.value }))} />
-          <Input label="Image URL" value={String(form.image_url)} onChange={(e) => setForm((p) => ({ ...p, image_url: e.target.value }))} />
-          <Input label="External URL" value={String(form.external_url)} onChange={(e) => setForm((p) => ({ ...p, external_url: e.target.value }))} />
-          <Input label="Date & Time" type="datetime-local" value={String(form.date_time)} onChange={(e) => setForm((p) => ({ ...p, date_time: e.target.value }))} />
-          <label className="flex items-center gap-2 font-body text-sm" style={{ color: 'var(--text-secondary)' }}>
-            <input type="checkbox" checked={Boolean(form.active)} onChange={(e) => setForm((p) => ({ ...p, active: e.target.checked }))} />
-            Active
-          </label>
-          <div className="flex justify-end gap-2 pt-2">
+          <div className="flex items-center justify-between border-b pb-3" style={{ borderColor: 'var(--border-default)' }}>
+            <h3 className="font-display text-lg sm:text-xl" style={{ color: 'var(--text-primary)' }}>
+              {editing ? 'Edit' : 'Add'} Promotion
+            </h3>
+            <button
+              onClick={() => setModalOpen(false)}
+              className="p-1 rounded-lg text-secondary hover:text-primary hover:bg-brand-accent/10 transition-colors"
+              aria-label="Close modal"
+            >
+              <X className="w-5 h-5" />
+            </button>
+          </div>
+
+          <div className="space-y-3.5 pt-1">
+            <Input label="Title" value={String(form.title)} onChange={(e) => setForm((p) => ({ ...p, title: e.target.value }))} />
+            <Input label="Description" value={String(form.description)} onChange={(e) => setForm((p) => ({ ...p, description: e.target.value }))} />
+            <Input label="Image URL" value={String(form.image_url)} onChange={(e) => setForm((p) => ({ ...p, image_url: e.target.value }))} />
+            <Input label="External URL" value={String(form.external_url)} onChange={(e) => setForm((p) => ({ ...p, external_url: e.target.value }))} />
+            <Input label="Date & Time" type="datetime-local" value={String(form.date_time)} onChange={(e) => setForm((p) => ({ ...p, date_time: e.target.value }))} />
+            <label className="flex items-center gap-2 font-body text-sm pt-1" style={{ color: 'var(--text-secondary)' }}>
+              <input type="checkbox" checked={Boolean(form.active)} onChange={(e) => setForm((p) => ({ ...p, active: e.target.checked }))} />
+              Active
+            </label>
+          </div>
+
+          <div className="flex justify-end gap-2 pt-3 border-t" style={{ borderColor: 'var(--border-default)' }}>
             <Button variant="secondary" onClick={() => setModalOpen(false)}>Cancel</Button>
             <Button onClick={() => void save()}>Save</Button>
           </div>
@@ -123,9 +142,9 @@ export function PromotionsSection(): JSX.Element {
 
       <Modal isOpen={deleteId !== null} onClose={() => setDeleteId(null)}>
         <div className="space-y-4">
-          <h3 className="font-display text-xl" style={{ color: 'var(--text-primary)' }}>Delete Promotion?</h3>
+          <h3 className="font-display text-lg sm:text-xl" style={{ color: 'var(--text-primary)' }}>Delete Promotion?</h3>
           <p className="font-body text-sm" style={{ color: 'var(--text-secondary)' }}>This action cannot be undone.</p>
-          <div className="flex justify-end gap-2">
+          <div className="flex justify-end gap-2 pt-2 border-t" style={{ borderColor: 'var(--border-default)' }}>
             <Button variant="secondary" onClick={() => setDeleteId(null)}>Cancel</Button>
             <Button onClick={() => void confirmDelete()}>Delete</Button>
           </div>

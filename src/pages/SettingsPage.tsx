@@ -33,8 +33,16 @@ export function SettingsPage() {
     <div className="relative z-10 max-w-3xl mx-auto px-4 md:px-8 py-8 md:py-12">
       {/* Back */}
       <button
-        onClick={() => navigate('/profile')}
-        className="flex items-center gap-2 text-sm text-secondary hover:text-primary transition-colors mb-6"
+        type="button"
+        onClick={() => {
+          if (window.history.state && typeof window.history.state.idx === 'number' && window.history.state.idx > 0) {
+            navigate(-1);
+          } else {
+            navigate('/profile');
+          }
+        }}
+        className="inline-flex items-center gap-2 px-3 py-1.5 -ml-2 rounded-xl text-sm font-medium text-secondary hover:text-primary hover:bg-white/5 active:scale-95 transition-all cursor-pointer mb-6"
+        aria-label="Back to Profile"
       >
         <ArrowLeft className="w-4 h-4" />
         Back to Profile

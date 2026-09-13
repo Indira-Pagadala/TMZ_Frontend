@@ -69,6 +69,7 @@ export interface Opinion {
   question: string;
   options: string[];
   xp_reward: number;
+  allow_custom_text?: boolean;
 }
 
 export interface OpinionSubmission {

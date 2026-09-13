@@ -1,5 +1,6 @@
 import { useNavigate } from 'react-router-dom';
-import { BookOpen, Twitter, Linkedin, Github } from 'lucide-react';
+import { Twitter, Linkedin, Github } from 'lucide-react';
+import { TMSLogo } from '@/components/brand/TMSLogo';
 import { useAuth } from '@/lib/auth';
 
 export function Footer() {
@@ -35,11 +36,8 @@ export function Footer() {
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-8">
           {/* Brand */}
           <div className="md:col-span-2">
-            <div className="flex items-center gap-2.5 mb-4">
-              <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-brand-primary to-brand-dark flex items-center justify-center">
-                <BookOpen className="w-5 h-5 text-white" />
-              </div>
-              <span className="font-display text-lg text-primary">The Modern Stories</span>
+            <div className="mb-4">
+              <TMSLogo size="md" />
             </div>
             <p className="text-sm text-muted max-w-sm leading-relaxed">
               A premium editorial platform for modern thinkers. Read, learn, and grow with interactive articles, quizzes, and more.

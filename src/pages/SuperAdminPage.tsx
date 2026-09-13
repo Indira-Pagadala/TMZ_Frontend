@@ -3,15 +3,17 @@ import { useNavigate } from 'react-router-dom';
 import {
   LayoutDashboard, FileText, FolderTree, HelpCircle, MessageSquare,
   Users, Gamepad2, Megaphone, Newspaper, Image, BarChart3, MessageSquareText,
-  Mail, ScrollText, LogOut, Menu, X, Search, Plus, ChevronLeft, BookOpen,
-  ShieldAlert, Loader2,
+  Mail, ScrollText, LogOut, Menu, X, Search, Plus, ChevronLeft,
+  ShieldAlert, Loader2, Home as HomeIcon,
 } from 'lucide-react';
+import { TMSIcon } from '@/components/brand/TMSIcon';
 import { useAuth } from '@/lib/auth';
 import { ThemeToggle } from '@/components/layout/ThemeToggle';
 import { searchArticles } from '@/lib/admin/api';
 import type { AdminArticle } from '@/lib/admin/adminTypes';
 import { DashboardSection } from '@/components/admin/DashboardSection';
 import { ArticlesSection } from '@/components/admin/ArticlesSection';
+import { HomeSection } from '@/components/admin/HomeSection';
 import { CategoriesSection } from '@/components/admin/CategoriesSection';
 import { QuizzesSection } from '@/components/admin/QuizzesSection';
 import { OpinionsSection } from '@/components/admin/OpinionsSection';
@@ -27,7 +29,7 @@ import { BusinessEnquiriesSection } from '@/components/admin/BusinessEnquiriesSe
 import { AuditLogsSection } from '@/components/admin/AuditLogsSection';
 
 type SectionKey =
-  | 'dashboard' | 'articles' | 'categories' | 'quizzes' | 'opinions'
+  | 'dashboard' | 'home' | 'articles' | 'categories' | 'quizzes' | 'opinions'
   | 'comments' | 'users' | 'gamification' | 'promotions' | 'advertisements'
   | 'media' | 'analytics' | 'feedback' | 'business-enquiries' | 'audit-logs';
 
@@ -39,6 +41,7 @@ interface NavItem {
 
 const navItems: NavItem[] = [
   { key: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
+  { key: 'home', label: 'Home', icon: HomeIcon },
   { key: 'articles', label: 'Articles', icon: FileText },
   { key: 'categories', label: 'Categories', icon: FolderTree },
   { key: 'quizzes', label: 'Quizzes', icon: HelpCircle },
@@ -138,6 +141,7 @@ export function SuperAdminPage() {
   const renderSection = () => {
     switch (activeSection) {
       case 'dashboard': return <DashboardSection onNavigate={(k) => setActiveSection(k as SectionKey)} />;
+      case 'home': return <HomeSection openArticleEditor={openArticleEditor} />;
       case 'articles': return <ArticlesSection editorArticleId={editorArticleId} setEditorArticleId={setEditorArticleId} />;
       case 'categories': return <CategoriesSection />;
       case 'quizzes': return <QuizzesSection />;
@@ -302,12 +306,10 @@ function SidebarContent({
     <>
       {/* Logo */}
       <div className={`h-14 flex items-center px-4 shrink-0 ${collapsed ? 'justify-center' : 'justify-between'}`}>
-        <div className="flex items-center gap-2">
-          <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-brand-primary to-brand-dark flex items-center justify-center shrink-0">
-            <BookOpen className="w-4 h-4 text-white" />
-          </div>
+        <div className="flex items-center gap-2.5">
+          <TMSIcon className="w-7 h-7 shrink-0" />
           {!collapsed && (
-            <span className="font-display text-sm text-primary">Superadmin</span>
+            <span className="font-display font-semibold text-sm text-primary tracking-tight">Superadmin</span>
           )}
         </div>
         {onClose && (
